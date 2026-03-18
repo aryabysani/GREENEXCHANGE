@@ -1,0 +1,17 @@
+{
+  "name": "GreenCredits",
+  "short_name": "GreenCredits",
+  "description": "Carbon credits marketplace for the fest. Buy, sell, and trade surplus carbon credits.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#052e16",
+  "theme_color": "#16a34a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
