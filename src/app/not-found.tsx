@@ -54,7 +54,6 @@ export default function NotFound() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 36 }}>
           {[
             { emoji: '🧐', text: 'Did you type the URL yourself? Because bestie, that\'s a skill issue.' },
-            { emoji: '♻️', text: 'This page has been recycled into the void. It\'s very eco-friendly.' },
             { emoji: '💨', text: 'The carbon emissions from this 404 are immeasurable and you should feel bad.' },
           ].map((item, i) => (
             <div key={i} style={{
