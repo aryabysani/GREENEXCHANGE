@@ -1,0 +1,142 @@
+import { createClient } from '@supabase/supabase-js'
+import { NextResponse } from 'next/server'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+async function revokeUserSessions(userId: string) {
+  // Revoke all refresh tokens for this user so they are kicked out immediately
+  await fetch(
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/admin/users/${userId}/sessions`,
+    {
+      method: 'DELETE',
+      headers: {
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
+      },
+    }
+  )
+}
+
+export async function POST(request: Request) {
+  const { secret, action, id } = await request.json()
+
+  if (secret !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // ── get-profiles ────────────────────────────────────────────
+  if (action === 'get-profiles') {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('stall_name')
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers({ perPage: 1000 })
+    const emailMap: Record<string, string> = {}
+    if (!usersError && users) {
+      for (const u of users) {
+        emailMap[u.id] = (u.email ?? '').replace('@fest.com', '')
+      }
+    }
+
+    const enriched = (data ?? []).map((p: Record<string, unknown>) => ({
+      ...p,
+      username: emailMap[p.id as string] ?? '',
+    }))
+    return NextResponse.json({ data: enriched })
+  }
+
+  // ── get-listings ─────────────────────────────────────────────
+  if (action === 'get-listings') {
+    const { data, error } = await supabase
+      .from('listings')
+      .select('*, profiles(stall_name)')
+      .order('created_at', { ascending: false })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ data })
+  }
+
+  // ── ban ──────────────────────────────────────────────────────
+  if (action === 'ban') {
+    // Mark profile as banned
+    const { error: profileErr } = await supabase
+      .from('profiles')
+      .update({ is_banned: true })
+      .eq('id', id)
+    if (profileErr) return NextResponse.json({ error: profileErr.message }, { status: 500 })
+
+    // Hide all live listings from this stall
+    await supabase
+      .from('listings')
+      .update({ is_hidden: true })
+      .eq('seller_id', id)
+      .eq('status', 'live')
+
+    // Kick the user out of all active sessions
+    await revokeUserSessions(id)
+
+    return NextResponse.json({ success: true })
+  }
+
+  // ── unban ────────────────────────────────────────────────────
+  if (action === 'unban') {
+    // Remove ban
+    const { error: profileErr } = await supabase
+      .from('profiles')
+      .update({ is_banned: false })
+      .eq('id', id)
+    if (profileErr) return NextResponse.json({ error: profileErr.message }, { status: 500 })
+
+    // Restore all hidden listings for this stall back to live
+    await supabase
+      .from('listings')
+      .update({ is_hidden: false })
+      .eq('seller_id', id)
+      .eq('is_hidden', true)
+
+    return NextResponse.json({ success: true })
+  }
+
+  // ── reset-profile ─────────────────────────────────────────────
+  if (action === 'reset-profile') {
+    // Reset editable fields only — keep team_members
+    const { error: profileErr } = await supabase
+      .from('profiles')
+      .update({
+        stall_name: 'Stall (Reset)',
+        whatsapp_number: null,
+        carbon_balance: 100,
+        is_banned: false,
+      })
+      .eq('id', id)
+    if (profileErr) return NextResponse.json({ error: profileErr.message }, { status: 500 })
+
+    // Remove all their listings (clean slate)
+    await supabase
+      .from('listings')
+      .update({ status: 'removed' })
+      .eq('seller_id', id)
+      .neq('status', 'removed')
+
+    // Kick the user out so they go through onboarding again on next login
+    await revokeUserSessions(id)
+
+    return NextResponse.json({ success: true })
+  }
+
+  // ── remove-listing ────────────────────────────────────────────
+  if (action === 'remove-listing') {
+    const { error } = await supabase
+      .from('listings')
+      .update({ status: 'removed' })
+      .eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true })
+  }
+
+  return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
+}

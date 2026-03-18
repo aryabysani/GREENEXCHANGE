@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/aryab/OneDrive/Documents/campusthrift/src/app/**)",
+      "Read(//c/Users/aryab/OneDrive/Documents/campusthrift/**)"
+    ]
+  }
+}
