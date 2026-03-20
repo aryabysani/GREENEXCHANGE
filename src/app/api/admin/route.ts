@@ -132,10 +132,24 @@ export async function POST(request: Request) {
   if (action === 'get-transactions') {
     const { data, error } = await supabase
       .from('transactions')
-      .select('*, seller:profiles!transactions_seller_id_fkey(stall_name), buyer:profiles!transactions_buyer_id_fkey(stall_name)')
+      .select('id, credits_amount, created_at, seller_id, buyer_id')
       .order('created_at', { ascending: false })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ data })
+
+    // Build username map from auth
+    const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 })
+    const usernameMap: Record<string, string> = {}
+    for (const u of users) {
+      usernameMap[u.id] = (u.email ?? '').replace('@fest.com', '')
+    }
+
+    const enriched = (data ?? []).map((t: Record<string, unknown>) => ({
+      ...t,
+      seller_username: usernameMap[t.seller_id as string] ?? '—',
+      buyer_username: usernameMap[t.buyer_id as string] ?? '—',
+    }))
+
+    return NextResponse.json({ data: enriched })
   }
 
   // ── remove-listing ────────────────────────────────────────────

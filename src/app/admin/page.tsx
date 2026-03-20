@@ -29,8 +29,8 @@ type Transaction = {
   id: string
   credits_amount: number
   created_at: string
-  seller: { stall_name: string } | null
-  buyer: { stall_name: string } | null
+  seller_username: string
+  buyer_username: string
 }
 
 export default function AdminPage() {
@@ -353,11 +353,11 @@ export default function AdminPage() {
                     {transactions.map((t, i) => (
                       <tr key={t.id} style={{ borderTop: '1px solid #E8F5E9', background: i % 2 === 0 ? '#fff' : '#FAFFFE' }}>
                         <td style={{ padding: '12px 16px', color: '#9E9E9E', fontSize: '0.8rem' }}>{transactions.length - i}</td>
-                        <td style={{ padding: '12px 16px', fontWeight: 600, color: '#C62828' }}>
-                          {t.seller?.stall_name ?? '—'}
+                        <td style={{ padding: '12px 16px', fontWeight: 700, color: '#C62828', fontFamily: 'monospace' }}>
+                          {t.seller_username}
                         </td>
-                        <td style={{ padding: '12px 16px', fontWeight: 600, color: '#2D6A4F' }}>
-                          {t.buyer?.stall_name ?? '—'}
+                        <td style={{ padding: '12px 16px', fontWeight: 700, color: '#2D6A4F', fontFamily: 'monospace' }}>
+                          {t.buyer_username}
                         </td>
                         <td style={{ padding: '12px 16px' }}>
                           <span style={{ background: '#E8F5E9', color: '#2D6A4F', borderRadius: 6, padding: '2px 10px', fontWeight: 700 }}>

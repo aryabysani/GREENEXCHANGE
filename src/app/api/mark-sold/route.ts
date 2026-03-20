@@ -16,31 +16,40 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Fetch the listing
-  const { data: listing } = await admin
+  const { data: listing, error: listingFetchErr } = await admin
     .from('listings')
     .select('id, seller_id, credits_amount, status')
     .eq('id', listingId)
     .single()
 
-  if (!listing) return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
+  if (listingFetchErr || !listing) return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
   if (listing.seller_id !== user.id) return NextResponse.json({ error: 'Not your listing' }, { status: 403 })
-  if (listing.status !== 'live') return NextResponse.json({ error: 'Listing is not live' }, { status: 400 })
+  if (listing.status !== 'live') return NextResponse.json({ error: 'This listing has already been sold or removed.' }, { status: 400 })
   if (buyerId === user.id) return NextResponse.json({ error: 'Cannot sell to yourself' }, { status: 400 })
 
   // Fetch buyer's current balance
-  const { data: buyer } = await admin
+  const { data: buyer, error: buyerErr } = await admin
     .from('profiles')
     .select('carbon_balance')
     .eq('id', buyerId)
     .single()
 
-  if (!buyer) return NextResponse.json({ error: 'Buyer not found' }, { status: 404 })
+  if (buyerErr || !buyer) return NextResponse.json({ error: 'Buyer not found' }, { status: 404 })
 
-  // Mark listing as sold with buyer
-  await admin
+  // Mark listing as sold — try with buyer_id first, fallback without
+  const { error: updateErr } = await admin
     .from('listings')
     .update({ status: 'sold', buyer_id: buyerId })
     .eq('id', listingId)
+
+  if (updateErr) {
+    // buyer_id column may not exist yet — update status only
+    const { error: fallbackErr } = await admin
+      .from('listings')
+      .update({ status: 'sold' })
+      .eq('id', listingId)
+    if (fallbackErr) return NextResponse.json({ error: fallbackErr.message }, { status: 500 })
+  }
 
   // Add credits to buyer's balance
   const currentBalance = buyer.carbon_balance ?? 0
