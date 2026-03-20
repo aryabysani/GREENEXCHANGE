@@ -50,9 +50,29 @@ export default function ListingDetailPage() {
         .eq('id', id)
         .single(),
       supabase.auth.getUser(),
-    ]).then(([{ data: listingData, error: listingErr }, { data: authData }]) => {
-      if (listingErr || !listingData) { setLoading(false); return }
-      setListing(listingData)
+    ]).then(async ([{ data: listingData, error: listingErr }, { data: authData }]) => {
+      let finalListing = listingData
+
+      // If join failed, fetch listing and profile separately
+      if (listingErr || !listingData) {
+        const { data: listingOnly } = await supabase
+          .from('listings')
+          .select('*')
+          .eq('id', id)
+          .single()
+
+        if (listingOnly) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('stall_name, whatsapp_number')
+            .eq('id', listingOnly.seller_id)
+            .single()
+          finalListing = { ...listingOnly, profiles: profileData ?? null }
+        }
+      }
+
+      if (!finalListing) { setLoading(false); return }
+      setListing(finalListing)
       setUserId(authData.user?.id ?? null)
       setLoading(false)
 
@@ -60,7 +80,7 @@ export default function ListingDetailPage() {
       supabase
         .from('profiles')
         .select('team_members')
-        .eq('id', listingData.seller_id)
+        .eq('id', finalListing.seller_id)
         .single()
         .then(({ data }) => {
           if (data?.team_members) setTeamMembers(data.team_members)
