@@ -19,6 +19,7 @@ type Listing = {
 
 type Stall = {
   id: string
+  username: string
   stall_name: string | null
 }
 
@@ -68,15 +69,11 @@ export default function MyListingsPage() {
           .select('stall_name, carbon_balance')
           .eq('id', userId)
           .single(),
-        supabase
-          .from('profiles')
-          .select('id, stall_name')
-          .neq('id', userId)
-          .order('stall_name'),
-      ]).then(([{ data: listData }, { data: profileData }, { data: stallData }]) => {
+        fetch('/api/stalls').then(r => r.json()),
+      ]).then(([{ data: listData }, { data: profileData }, stallRes]) => {
         setListings(listData ?? [])
         setProfile(profileData)
-        setAllStalls(stallData ?? [])
+        setAllStalls(stallRes.data ?? [])
         setLoading(false)
       })
     })
@@ -174,7 +171,7 @@ export default function MyListingsPage() {
               <option value="">— Select buyer stall —</option>
               {allStalls.map(s => (
                 <option key={s.id} value={s.id}>
-                  {s.stall_name ?? `Stall (${s.id.slice(0, 6)})`}
+                  {s.username}{s.stall_name ? ` — ${s.stall_name}` : ''}
                 </option>
               ))}
             </select>
@@ -363,20 +360,6 @@ export default function MyListingsPage() {
                         </>
                       )}
 
-                      {(listing.status === 'sold' || listing.status === 'removed') && (
-                        <button
-                          onClick={() => updateStatus(listing.id, 'live')}
-                          disabled={isActive}
-                          style={{
-                            background: '#E8F5E9', color: '#2D6A4F',
-                            border: '1px solid #C8E6C9', borderRadius: 8,
-                            padding: '7px 14px', fontSize: '0.82rem', fontWeight: 600,
-                            cursor: isActive ? 'not-allowed' : 'pointer', opacity: isActive ? 0.5 : 1,
-                          }}
-                        >
-                          🔄 Relist
-                        </button>
-                      )}
                     </div>
                   </div>
                 </div>
