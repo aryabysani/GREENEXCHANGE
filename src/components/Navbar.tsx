@@ -171,76 +171,84 @@ export default function Navbar() {
           position: 'fixed', top: 64, left: 0, right: 0, bottom: 0,
           background: '#fff', zIndex: 99,
           borderTop: '1px solid #C8E6C9',
-          overflowY: 'auto',
+          overflowY: 'auto', padding: '20px 16px',
+          display: 'flex', flexDirection: 'column', gap: 12,
         }}>
-          {/* Credits badge */}
+
+          {/* Stall info card */}
           {user && profile && (
             <div style={{
-              margin: '16px 20px 0',
-              background: '#E8F5E9', border: '1px solid #C8E6C9',
-              borderRadius: 12, padding: '12px 16px',
+              background: '#F0FAF0', border: '1px solid #C8E6C9',
+              borderRadius: 14, padding: '14px 16px',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
-              <span style={{ color: '#2D6A4F', fontWeight: 600, fontSize: '0.9rem' }}>
-                🍃 {profile.carbon_balance ?? 0} credits
-              </span>
-              <span style={{ color: '#6B7280', fontSize: '0.82rem' }}>{profile.stall_name}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  background: '#1A3C2B', color: '#fff', borderRadius: '50%',
+                  width: 36, height: 36, display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', fontWeight: 700, fontSize: '1rem', flexShrink: 0,
+                }}>{profile.stall_name?.[0] ?? '?'}</div>
+                <span style={{ color: '#1A3C2B', fontWeight: 600, fontSize: '0.95rem' }}>{profile.stall_name}</span>
+              </div>
+              <span style={{
+                background: '#E8F5E9', border: '1px solid #A5D6A7',
+                borderRadius: 20, padding: '4px 10px',
+                color: '#2D6A4F', fontWeight: 700, fontSize: '0.82rem',
+              }}>🍃 {profile.carbon_balance ?? 0}</span>
             </div>
           )}
 
+          {/* Sell CTA */}
+          {user && (
+            <Link href="/sell" onClick={() => setMobileOpen(false)} style={{
+              display: 'block', background: '#4CAF50', color: '#fff',
+              padding: '14px 20px', borderRadius: 12,
+              textDecoration: 'none', fontSize: '1rem', fontWeight: 700,
+              textAlign: 'center',
+            }}>+ Sell Credits</Link>
+          )}
+
           {/* Nav links */}
-          <div style={{ padding: '8px 0' }}>
+          <div style={{ border: '1px solid #E8F5E9', borderRadius: 14, overflow: 'hidden' }}>
             {[
-              { href: '/', label: '🛒 Marketplace' },
-              { href: '/how-it-works', label: '❓ How It Works' },
-              { href: '/about', label: 'ℹ️ About' },
-            ].map(({ href, label }) => (
+              { href: '/', label: 'Marketplace' },
+              { href: '/how-it-works', label: 'How It Works' },
+              { href: '/about', label: 'About' },
+              ...(user ? [
+                { href: '/my-listings', label: 'My Listings' },
+                { href: '/profile', label: 'Profile' },
+              ] : []),
+            ].map(({ href, label }, i, arr) => (
               <Link key={href} href={href}
                 onClick={() => setMobileOpen(false)}
                 style={{
-                  display: 'block', padding: '15px 20px',
+                  display: 'block', padding: '14px 18px',
                   color: navActive(href) ? '#4CAF50' : '#1A3C2B',
                   fontWeight: navActive(href) ? 700 : 500,
-                  textDecoration: 'none', fontSize: '1rem',
-                  borderBottom: '1px solid #F0F7F1',
+                  textDecoration: 'none', fontSize: '0.97rem',
+                  borderBottom: i < arr.length - 1 ? '1px solid #F0F7F1' : 'none',
+                  background: navActive(href) ? '#F0FAF0' : 'transparent',
                 }}
               >{label}</Link>
             ))}
-
-            {user ? (
-              <>
-                {[
-                  { href: '/sell', label: '+ Sell Credits', green: true },
-                  { href: '/my-listings', label: '📋 My Listings' },
-                  { href: '/profile', label: '👤 Profile' },
-                ].map(({ href, label, green }) => (
-                  <Link key={href} href={href}
-                    onClick={() => setMobileOpen(false)}
-                    style={{
-                      display: 'block', padding: '15px 20px',
-                      color: green ? '#4CAF50' : '#1A3C2B',
-                      fontWeight: green ? 700 : 500,
-                      textDecoration: 'none', fontSize: '1rem',
-                      borderBottom: '1px solid #F0F7F1',
-                    }}
-                  >{label}</Link>
-                ))}
-                <button onClick={() => { handleLogout(); setMobileOpen(false) }} style={{
-                  display: 'block', width: '100%', padding: '15px 20px',
-                  background: 'none', border: 'none', textAlign: 'left',
-                  color: '#C62828', cursor: 'pointer', fontSize: '1rem', fontWeight: 500,
-                }}>🚪 Logout</button>
-              </>
-            ) : (
-              <Link href="/auth" onClick={() => setMobileOpen(false)} style={{
-                display: 'block', margin: '16px 20px',
-                background: '#1A3C2B', color: '#fff',
-                padding: '14px 20px', borderRadius: 12,
-                textDecoration: 'none', fontSize: '1rem', fontWeight: 700,
-                textAlign: 'center',
-              }}>Login →</Link>
-            )}
           </div>
+
+          {/* Auth */}
+          {user ? (
+            <button onClick={() => { handleLogout(); setMobileOpen(false) }} style={{
+              width: '100%', padding: '13px 20px',
+              background: 'none', border: '1px solid #FFCDD2',
+              borderRadius: 12, textAlign: 'center',
+              color: '#C62828', cursor: 'pointer', fontSize: '0.97rem', fontWeight: 600,
+            }}>Logout</button>
+          ) : (
+            <Link href="/auth" onClick={() => setMobileOpen(false)} style={{
+              display: 'block', background: '#1A3C2B', color: '#fff',
+              padding: '14px 20px', borderRadius: 12,
+              textDecoration: 'none', fontSize: '1rem', fontWeight: 700,
+              textAlign: 'center',
+            }}>Login</Link>
+          )}
         </div>
       )}
     </>
