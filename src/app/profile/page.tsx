@@ -134,6 +134,10 @@ export default function ProfilePage() {
             <div style={{ color: '#A8D5B5', fontSize: '0.8rem', marginTop: 2 }}>
               {profile?.carbon_balance != null ? 'credits available' : 'Contact admin to set your balance'}
             </div>
+            <div style={{ color: '#C8E6C9', fontSize: '0.75rem', marginTop: 8, fontStyle: 'italic', opacity: 0.85 }}>
+              Balance = emissions allowed − your carbon footprint.<br />
+              Surplus = sell. Deficit = buy.
+            </div>
           </div>
         </div>
 

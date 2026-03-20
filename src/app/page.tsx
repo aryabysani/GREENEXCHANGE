@@ -188,6 +188,11 @@ export default function HomePage() {
           <p style={{ color: '#A8D5B5', fontSize: '1.05rem', margin: '0 0 24px' }}>
             Sitting on carbon credits like it's a flex?<br />
             Time to trade those surplus credits. Turn good eco-behavior into cold hard rupees. 💸
+            <br /><br />
+            <span style={{ fontSize: '0.88rem', color: '#C8E6C9', fontStyle: 'italic' }}>
+              Your balance = Carbon emissions allowed − your carbon footprint.<br />
+              You&apos;re either in surplus or deficit. Trade accordingly.
+            </span>
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/sell" style={{

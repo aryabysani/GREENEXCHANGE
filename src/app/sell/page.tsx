@@ -145,6 +145,10 @@ export default function SellPage() {
               {profile.carbon_balance == null && (
                 <div style={{ color: '#FFCDD2', fontSize: '0.78rem', marginTop: 4 }}>Contact admin to set your balance</div>
               )}
+              <div style={{ color: '#C8E6C9', fontSize: '0.75rem', marginTop: 6, fontStyle: 'italic', opacity: 0.85 }}>
+                Balance = emissions allowed − your carbon footprint.<br />
+                Surplus = sell. Deficit = buy.
+              </div>
             </div>
             <div style={{ color: '#A8D5B5', fontSize: '0.82rem', textAlign: 'right' }}>
               {profile.stall_name}<br />
