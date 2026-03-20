@@ -289,6 +289,14 @@ export default function SellPage() {
               />
             </div>
 
+            <div style={{
+              background: '#F0F7F1', border: '1px solid #C8E6C9',
+              borderRadius: 10, padding: '12px 16px', marginBottom: 4,
+              fontSize: '0.82rem', color: '#2D6A4F', lineHeight: 1.6,
+            }}>
+              💡 <strong>How to complete a trade:</strong> Once you&apos;ve agreed on a deal with a buyer, go to <strong>My Listings</strong>, click <strong>🤝 Sold</strong> on this listing, and select the buyer&apos;s stall number. Once you confirm, the credits will be automatically deducted from your balance and added to the buyer&apos;s balance.
+            </div>
+
             <button
               type="submit"
               disabled={loading || !profile?.whatsapp_number}

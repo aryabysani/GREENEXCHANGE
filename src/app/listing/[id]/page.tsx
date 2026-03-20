@@ -375,6 +375,13 @@ export default function ListingDetailPage() {
                     ) : (
                       <p style={{ color: '#9E9E9E', margin: 0, fontSize: '0.87rem' }}>Seller hasn&apos;t added a WhatsApp number yet.</p>
                     )}
+                    <div style={{
+                      marginTop: 14, background: '#F0F7F1', border: '1px solid #C8E6C9',
+                      borderRadius: 10, padding: '11px 14px', fontSize: '0.82rem',
+                      color: '#2D6A4F', lineHeight: 1.6,
+                    }}>
+                      💡 <strong>How buying works:</strong> Contact the seller on WhatsApp and agree on the deal. The seller will then mark the listing as sold and select your stall — your carbon credit balance will be updated automatically.
+                    </div>
                   </div>
                 ) : (
                   /* Blurred overlay for guests */
