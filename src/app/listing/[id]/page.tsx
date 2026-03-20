@@ -40,6 +40,11 @@ export default function ListingDetailPage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [allStalls, setAllStalls] = useState<{ id: string; username: string; stall_name: string | null }[]>([])
+  const [soldModal, setSoldModal] = useState(false)
+  const [selectedBuyer, setSelectedBuyer] = useState('')
+  const [soldLoading, setSoldLoading] = useState(false)
+  const [soldError, setSoldError] = useState('')
 
   useEffect(() => {
     const supabase = createClient()
@@ -90,35 +95,52 @@ export default function ListingDetailPage() {
 
   const isOwner = userId && listing?.seller_id === userId
 
-  const handleMarkSold = async () => {
-    setActionLoading(true)
-    setError('')
-    const supabase = createClient()
-    const { error: err } = await supabase
-      .from('listings')
-      .update({ status: 'sold' })
-      .eq('id', id)
-    if (err) setError(err.message)
-    else {
-      setSuccess('Listing marked as sold! 🎉')
-      setListing(prev => prev ? { ...prev, status: 'sold' } : prev)
+  const openSoldModal = async () => {
+    setSoldError('')
+    setSelectedBuyer('')
+    if (allStalls.length === 0) {
+      const res = await fetch('/api/stalls')
+      const json = await res.json()
+      setAllStalls(json.data ?? [])
     }
-    setActionLoading(false)
+    setSoldModal(true)
+  }
+
+  const confirmSold = async () => {
+    if (!selectedBuyer) { setSoldError('Please select a buyer.'); return }
+    setSoldLoading(true)
+    setSoldError('')
+    const res = await fetch('/api/mark-sold', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listingId: id, buyerId: selectedBuyer }),
+    })
+    const json = await res.json()
+    if (!res.ok) { setSoldError(json.error ?? 'Something went wrong.'); setSoldLoading(false); return }
+    setSoldModal(false)
+    setSuccess('Listing marked as sold! 🎉')
+    setListing(prev => prev ? { ...prev, status: 'sold' } : prev)
+    setSoldLoading(false)
   }
 
   const handleDelete = async () => {
-    if (!confirm('Delete this listing? This cannot be undone.')) return
+    if (!confirm('Delete this listing? Credits will be refunded to your balance.')) return
     setActionLoading(true)
     setError('')
     const supabase = createClient()
-    const { error: err } = await supabase
-      .from('listings')
-      .update({ status: 'removed' })
-      .eq('id', id)
-    if (err) setError(err.message)
-    else {
-      router.push('/my-listings')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setActionLoading(false); return }
+
+    await supabase.from('listings').update({ status: 'removed' }).eq('id', id)
+
+    // Refund credits back to seller
+    if (listing) {
+      const { data: profile } = await supabase.from('profiles').select('carbon_balance').eq('id', user.id).single()
+      const currentBalance = profile?.carbon_balance ?? 0
+      await supabase.from('profiles').update({ carbon_balance: currentBalance + listing.credits_amount }).eq('id', user.id)
     }
+
+    router.push('/my-listings')
     setActionLoading(false)
   }
 
@@ -182,6 +204,56 @@ export default function ListingDetailPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#F0F7F1' }}>
       <Navbar />
+
+      {/* Sold Modal */}
+      {soldModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '0 16px',
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: 20, padding: '32px 28px',
+            maxWidth: 420, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+          }}>
+            <div style={{ fontSize: 36, textAlign: 'center', marginBottom: 8 }}>🤝</div>
+            <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, color: '#1A3C2B', textAlign: 'center', margin: '0 0 4px' }}>
+              Who bought it?
+            </h2>
+            <p style={{ color: '#6B7280', textAlign: 'center', fontSize: '0.88rem', margin: '0 0 20px' }}>
+              Selling <strong>{listing?.credits_amount} credits</strong> — select the buyer and their balance updates automatically.
+            </p>
+            <select
+              value={selectedBuyer}
+              onChange={e => setSelectedBuyer(e.target.value)}
+              style={{
+                width: '100%', padding: '12px 14px', borderRadius: 10,
+                border: '1.5px solid #C8E6C9', fontSize: '0.95rem',
+                background: '#F9FBF9', color: '#1A3C2B', marginBottom: 12,
+                outline: 'none', cursor: 'pointer',
+              }}
+            >
+              <option value="">— Select buyer stall —</option>
+              {allStalls.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.username}{s.stall_name ? ` — ${s.stall_name}` : ''}
+                </option>
+              ))}
+            </select>
+            {soldError && <div style={{ color: '#C62828', fontSize: '0.85rem', marginBottom: 10, textAlign: 'center' }}>{soldError}</div>}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setSoldModal(false)} disabled={soldLoading}
+                style={{ flex: 1, padding: '11px', borderRadius: 10, border: '1.5px solid #E0E0E0', background: '#fff', color: '#6B7280', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>
+                Cancel
+              </button>
+              <button onClick={confirmSold} disabled={soldLoading || !selectedBuyer}
+                style={{ flex: 1, padding: '11px', borderRadius: 10, background: selectedBuyer ? '#E65100' : '#ccc', color: '#fff', fontWeight: 700, cursor: selectedBuyer ? 'pointer' : 'not-allowed', border: 'none', fontSize: '0.9rem' }}>
+                {soldLoading ? 'Confirming...' : '✅ Confirm Sale'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="listing-outer" style={{ maxWidth: 720, margin: '32px auto', padding: '0 24px 64px', width: '100%' }}>
         {/* Back */}
@@ -469,7 +541,7 @@ export default function ListingDetailPage() {
                 </p>
                 <div className="listing-actions" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   <button
-                    onClick={handleMarkSold}
+                    onClick={openSoldModal}
                     disabled={actionLoading}
                     style={{
                       background: '#4CAF50', color: '#fff',
