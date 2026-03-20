@@ -56,7 +56,7 @@ export default function Navbar() {
       }}>
         {/* Logo */}
         <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 22, lineHeight: 1 }}>🌿</span>
+          <span style={{ fontSize: 22, lineHeight: 1 }}>♻️</span>
           <span className="brand-logo" style={{ fontSize: '1.4rem', color: '#1A3C2B', letterSpacing: '-0.03em' }}>
             Green<span style={{ color: '#4CAF50' }}>Credits</span>
           </span>

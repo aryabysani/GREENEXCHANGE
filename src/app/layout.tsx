@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "GreenCredits — Sell Your Carbssss 🌿",
+    default: "GreenCredits — Sell Your Carbssss ♻️",
     template: "%s | GreenCredits",
   },
   description:
@@ -20,14 +20,14 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    title: "GreenCredits — Sell Your Carbssss 🌿",
+    title: "GreenCredits — Sell Your Carbssss ♻️",
     description:
       "Carbon credits marketplace for the fest. Buy, sell, and trade surplus carbon credits.",
     siteName: "GreenCredits",
   },
   twitter: {
     card: "summary",
-    title: "GreenCredits — Sell Your Carbssss 🌿",
+    title: "GreenCredits — Sell Your Carbssss ♻️",
     description:
       "Carbon credits marketplace for the fest. Buy, sell, and trade surplus carbon credits.",
   },

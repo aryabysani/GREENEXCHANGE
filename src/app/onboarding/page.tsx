@@ -57,7 +57,7 @@ export default function OnboardingPage() {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F0F7F1' }}>
         <div style={{ textAlign: 'center', color: '#6B7280' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>🌿</div>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>♻️</div>
           <div>Loading...</div>
         </div>
       </div>
@@ -95,7 +95,7 @@ export default function OnboardingPage() {
         }} />
 
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div className="float-anim" style={{ fontSize: 72, marginBottom: 16 }}>🌿</div>
+          <div className="float-anim" style={{ fontSize: 72, marginBottom: 16 }}>♻️</div>
           <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '2.2rem', color: '#fff', letterSpacing: '-0.03em' }}>
             Green<span style={{ color: '#4CAF50' }}>Credits</span>
           </div>
@@ -253,7 +253,7 @@ export default function OnboardingPage() {
             >
               {saving ? (
                 <><span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>⏳</span> Saving...</>
-              ) : '🌿 Let\'s Go →'}
+              ) : '♻️ Let\'s Go →'}
             </button>
           </form>
         </div>

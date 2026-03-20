@@ -108,7 +108,7 @@ export default function ListingDetailPage() {
     removed: '#F5F5F5',
   }
   const statusEmoji: Record<string, string> = {
-    live: '🌿',
+    live: '♻️',
     sold: '🤝',
     removed: '🗑️',
   }
@@ -119,7 +119,7 @@ export default function ListingDetailPage() {
         <Navbar />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center', color: '#6B7280' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🌿</div>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>♻️</div>
             <div>Loading listing...</div>
           </div>
         </div>

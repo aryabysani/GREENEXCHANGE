@@ -198,7 +198,7 @@ export default function AdminPage() {
 
         {dataLoading ? (
           <div style={{ textAlign: 'center', padding: 60, color: '#6B7280' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🌿</div>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>♻️</div>
             Loading...
           </div>
         ) : tab === 'profiles' ? (

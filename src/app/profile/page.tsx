@@ -68,7 +68,7 @@ export default function ProfilePage() {
 
     if (err) setError(err.message)
     else {
-      setSuccess('Profile updated! Looking good. 🌿')
+      setSuccess('Profile updated! Looking good. ♻️')
       setProfile(prev => prev ? { ...prev, stall_name: stallName.trim(), whatsapp_number: whatsapp.trim() || null } : prev)
     }
     setSaving(false)
@@ -87,7 +87,7 @@ export default function ProfilePage() {
         <Navbar />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center', color: '#6B7280' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🌿</div>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>♻️</div>
             <div>Loading your profile...</div>
           </div>
         </div>

@@ -31,7 +31,7 @@ export default function HowItWorksPage() {
           {[
             {
               num: '01',
-              emoji: '🌿',
+              emoji: '♻️',
               title: 'Check Your Balance',
               desc: 'Log in with your stall credentials. On your dashboard, you\'ll see your carbon credit balance — how many credits you have left. This is your eco-score, set by the fest admin based on your stall\'s actual emissions.',
               subtext: 'If your balance is high: congrats, you\'re the sustainability champion. 🏆\nIf it\'s low: no judgment, just... maybe lay off the generator.',
@@ -189,7 +189,7 @@ export default function HowItWorksPage() {
             borderRadius: 24, textDecoration: 'none', fontWeight: 700, fontSize: '1rem',
             display: 'inline-block',
           }}>
-            🌿 Go to Marketplace
+            ♻️ Go to Marketplace
           </Link>
           <div style={{ marginTop: 12 }}>
             <Link href="/about" style={{ color: '#4CAF50', textDecoration: 'none', fontSize: '0.9rem' }}>

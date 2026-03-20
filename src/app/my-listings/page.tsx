@@ -26,7 +26,7 @@ function timeAgo(date: string) {
 }
 
 const STATUS_STYLES: Record<string, { bg: string; color: string; label: string; emoji: string }> = {
-  live:    { bg: '#E8F5E9', color: '#2D6A4F', label: 'LIVE',    emoji: '🌿' },
+  live:    { bg: '#E8F5E9', color: '#2D6A4F', label: 'LIVE',    emoji: '♻️' },
   sold:    { bg: '#FFF3E0', color: '#E65100', label: 'SOLD',    emoji: '🤝' },
   removed: { bg: '#F5F5F5', color: '#757575', label: 'REMOVED', emoji: '🗑️' },
 }
@@ -81,7 +81,7 @@ export default function MyListingsPage() {
         <Navbar />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center', color: '#6B7280' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🌿</div>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>♻️</div>
             <div>Loading your listings...</div>
           </div>
         </div>
