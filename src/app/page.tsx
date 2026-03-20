@@ -64,7 +64,7 @@ function ListingCard({ listing }: { listing: Listing }) {
             fontWeight: 600,
             color: '#2D6A4F',
           }}>
-            🌿 LIVE
+            ♻️ LIVE
           </div>
           <span style={{ fontSize: '0.78rem', color: '#9E9E9E' }}>{timeAgo(listing.created_at)}</span>
         </div>
@@ -183,11 +183,11 @@ export default function HomePage() {
             Green<span style={{ color: '#4CAF50' }}>Credits</span>
           </div>
           <h1 style={{ fontSize: 'clamp(1.5rem, 3.5vw, 2.4rem)', fontWeight: 800, color: '#fff', margin: '0 0 12px', fontFamily: 'Syne, sans-serif' }}>
-            Sell your carbssss 🌿
+            Sell your carbssss ♻️
           </h1>
           <p style={{ color: '#A8D5B5', fontSize: '1.05rem', margin: '0 0 24px' }}>
-            Your stall's been too gassy? Time to trade those surplus credits.<br />
-            Turn good eco-behavior into cold hard rupees. 💸
+            Sitting on carbon credits like it's a flex?<br />
+            Time to trade those surplus credits. Turn good eco-behavior into cold hard rupees. 💸
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/sell" style={{
@@ -263,7 +263,7 @@ export default function HomePage() {
       <div className="listings-grid" style={{ maxWidth: 1100, margin: '0 auto', padding: '8px 24px 48px', width: '100%' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: 80, color: '#6B7280' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🌿</div>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>♻️</div>
             Loading listings...
           </div>
         ) : filtered.length === 0 ? (

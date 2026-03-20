@@ -53,7 +53,7 @@ export default function SellPage() {
     if (!credits || credits <= 0) { setError('Credits must be a positive number.'); return }
     if (!price || price <= 0) { setError('Price must be a positive number.'); return }
     if (profile && credits > profile.carbon_balance) {
-      setError(`You only have ${profile.carbon_balance} credits available. Can't sell what you don't have! 🌿`)
+      setError(`You only have ${profile.carbon_balance} credits available. Can't sell what you don't have! ♻️`)
       return
     }
     if (!profile?.whatsapp_number) {
@@ -91,7 +91,7 @@ export default function SellPage() {
         <Navbar />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center', color: '#6B7280' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🌿</div>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>♻️</div>
             <div>Loading your stall...</div>
           </div>
         </div>
@@ -112,7 +112,7 @@ export default function SellPage() {
         {/* Header */}
         <div style={{ marginBottom: 28 }} className="fade-in-up">
           <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '2rem', color: '#1A3C2B', margin: '0 0 6px' }}>
-            List Your Carbssss 🌿
+            List Your Carbssss ♻️
           </h1>
           <p style={{ color: '#6B7280', margin: 0 }}>
             Got surplus credits? Someone out there needs them more than you do.
@@ -262,7 +262,7 @@ export default function SellPage() {
               <textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                placeholder="Why are you selling? Any details? e.g. 'We switched to solar. Now we have carbssss to spare.'"
+                placeholder="Any info you want to share — e.g. 'We switched to solar. Now we have carbssss to spare.'"
                 rows={3}
                 style={{
                   width: '100%', padding: '12px 14px',
@@ -290,7 +290,7 @@ export default function SellPage() {
             >
               {loading ? (
                 <><span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>⏳</span> Listing...</>
-              ) : '🌿 List Credits Now'}
+              ) : '♻️ List Credits Now'}
             </button>
           </form>
         </div>
