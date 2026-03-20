@@ -182,7 +182,6 @@ export default function HowItWorksPage() {
             { icon: '📱', text: 'Add your WhatsApp number on your profile page before you can list credits.' },
             { icon: '💸', text: 'You set the price. There\'s no minimum or maximum. The market decides.' },
             { icon: '♻️', text: 'You can split your credits across multiple listings. Sell in batches.' },
-            { icon: '🔄', text: 'Changed your mind? Relist a sold/deleted listing anytime from My Listings.' },
           ].map(tip => (
             <div key={tip.text} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
               <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.5 }}>{tip.icon}</span>
