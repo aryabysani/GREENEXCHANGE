@@ -26,7 +26,7 @@ export default function HowItWorksPage() {
 
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '48px 24px 80px', width: '100%' }}>
 
-        {/* 3 Main Steps */}
+        {/* 4 Main Steps */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginBottom: 60, position: 'relative' }}>
           {[
             {
@@ -51,13 +51,22 @@ export default function HowItWorksPage() {
               num: '03',
               emoji: '📱',
               title: 'Connect via WhatsApp',
-              desc: 'Browse the marketplace, find a listing you like, and click "Chat on WhatsApp". A pre-filled message is sent to the seller. You two sort it out — agree on terms, pay, done.',
-              subtext: 'GreenCredits is the listing platform. The actual transaction is between you and the seller. We just play matchmaker. 💑',
+              desc: 'Browse the marketplace, find a listing you like, and click "Chat on WhatsApp". A pre-filled message is sent to the seller. You two sort out the deal — agree on terms, pay, done.',
+              subtext: 'Once you\'ve agreed on the deal, the seller handles the final step on the platform.',
               color: '#2D6A4F',
               tip: 'Both buyer and seller should be logged in to see contact info.',
             },
+            {
+              num: '04',
+              emoji: '✅',
+              title: 'Seller Confirms the Transfer',
+              desc: 'Once the deal is done, the seller goes to their listing and clicks "Mark as Sold". They select the buyer\'s stall from the list and confirm. The carbon credits are automatically transferred — deducted from the seller and added to the buyer\'s balance.',
+              subtext: 'No manual entry. No trust issues. The platform handles the balance update instantly.',
+              color: '#E65100',
+              tip: 'The transaction is recorded and visible in the admin panel with both stall usernames.',
+            },
           ].map((step, i) => (
-            <div key={step.num} style={{ display: 'flex', gap: 0, marginBottom: i < 2 ? 0 : 0, position: 'relative' }}>
+            <div key={step.num} style={{ display: 'flex', gap: 0, marginBottom: i < 3 ? 0 : 0, position: 'relative' }}>
               {/* Step line connector */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginRight: 24, flexShrink: 0 }}>
                 <div style={{
