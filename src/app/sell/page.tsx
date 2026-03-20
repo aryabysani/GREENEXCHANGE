@@ -138,7 +138,7 @@ export default function SellPage() {
           }}>
             <div>
               <div style={{ color: '#A8D5B5', fontSize: '0.78rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Carbon Balance</div>
-              <div style={{ color: '#fff', fontWeight: 800, fontSize: '1.6rem', lineHeight: 1.2 }}>
+              <div style={{ color: profile.carbon_balance != null && profile.carbon_balance < 0 ? '#FF5252' : '#fff', fontWeight: 800, fontSize: '1.6rem', lineHeight: 1.2 }}>
                 ♻️ {profile.carbon_balance != null ? profile.carbon_balance : 'NULL'}
                 {profile.carbon_balance != null && <span style={{ fontSize: '0.9rem', fontWeight: 400, color: '#A8D5B5' }}> credits</span>}
               </div>

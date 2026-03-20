@@ -84,9 +84,12 @@ export default function Navbar() {
             <>
               {profile && (
                 <div style={{
-                  background: '#E8F5E9', border: '1px solid #C8E6C9',
+                  background: profile.carbon_balance != null && profile.carbon_balance < 0 ? '#FFEBEE' : '#E8F5E9',
+                  border: `1px solid ${profile.carbon_balance != null && profile.carbon_balance < 0 ? '#FFCDD2' : '#C8E6C9'}`,
                   borderRadius: 20, padding: '4px 12px',
-                  fontSize: '0.8rem', color: '#2D6A4F', fontWeight: 600,
+                  fontSize: '0.8rem',
+                  color: profile.carbon_balance != null && profile.carbon_balance < 0 ? '#C62828' : '#2D6A4F',
+                  fontWeight: 600,
                   display: 'flex', alignItems: 'center', gap: 4,
                 }}>
                   <span>♻️</span>
@@ -203,9 +206,11 @@ export default function Navbar() {
                 <span style={{ color: '#1A3C2B', fontWeight: 600, fontSize: '0.95rem' }}>{profile.stall_name}</span>
               </div>
               <span style={{
-                background: '#E8F5E9', border: '1px solid #A5D6A7',
+                background: profile.carbon_balance != null && profile.carbon_balance < 0 ? '#FFEBEE' : '#E8F5E9',
+                border: `1px solid ${profile.carbon_balance != null && profile.carbon_balance < 0 ? '#FFCDD2' : '#A5D6A7'}`,
                 borderRadius: 20, padding: '4px 10px',
-                color: '#2D6A4F', fontWeight: 700, fontSize: '0.82rem',
+                color: profile.carbon_balance != null && profile.carbon_balance < 0 ? '#C62828' : '#2D6A4F',
+                fontWeight: 700, fontSize: '0.82rem',
               }}>♻️ {profile.carbon_balance != null ? profile.carbon_balance : 'Contact admin'}</span>
             </div>
           )}

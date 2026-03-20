@@ -128,7 +128,7 @@ export default function ProfilePage() {
             <div style={{ color: '#A8D5B5', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
               Carbon Balance
             </div>
-            <div style={{ color: '#4CAF50', fontWeight: 800, fontSize: '2.2rem', lineHeight: 1 }}>
+            <div style={{ color: profile?.carbon_balance != null && profile.carbon_balance < 0 ? '#FF5252' : '#4CAF50', fontWeight: 800, fontSize: '2.2rem', lineHeight: 1 }}>
               ♻️ {profile?.carbon_balance != null ? profile.carbon_balance : 'NULL'}
             </div>
             <div style={{ color: '#A8D5B5', fontSize: '0.8rem', marginTop: 2 }}>
