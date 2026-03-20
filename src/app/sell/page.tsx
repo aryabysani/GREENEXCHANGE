@@ -52,6 +52,10 @@ export default function SellPage() {
 
     if (!credits || credits <= 0) { setError('Credits must be a positive number.'); return }
     if (!price || price <= 0) { setError('Price must be a positive number.'); return }
+    if (profile?.carbon_balance == null) {
+      setError('Your carbon balance has not been set yet. Contact the admin.')
+      return
+    }
     if (profile && credits > profile.carbon_balance) {
       setError(`You only have ${profile.carbon_balance} credits available. Can't sell what you don't have! ♻️`)
       return
@@ -135,8 +139,12 @@ export default function SellPage() {
             <div>
               <div style={{ color: '#A8D5B5', fontSize: '0.78rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Carbon Balance</div>
               <div style={{ color: '#fff', fontWeight: 800, fontSize: '1.6rem', lineHeight: 1.2 }}>
-                ♻️ {profile.carbon_balance} <span style={{ fontSize: '0.9rem', fontWeight: 400, color: '#A8D5B5' }}>credits</span>
+                ♻️ {profile.carbon_balance != null ? profile.carbon_balance : 'NULL'}
+                {profile.carbon_balance != null && <span style={{ fontSize: '0.9rem', fontWeight: 400, color: '#A8D5B5' }}> credits</span>}
               </div>
+              {profile.carbon_balance == null && (
+                <div style={{ color: '#FFCDD2', fontSize: '0.78rem', marginTop: 4 }}>Contact admin to set your balance</div>
+              )}
             </div>
             <div style={{ color: '#A8D5B5', fontSize: '0.82rem', textAlign: 'right' }}>
               {profile.stall_name}<br />

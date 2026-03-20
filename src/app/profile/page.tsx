@@ -129,9 +129,11 @@ export default function ProfilePage() {
               Carbon Balance
             </div>
             <div style={{ color: '#4CAF50', fontWeight: 800, fontSize: '2.2rem', lineHeight: 1 }}>
-              ♻️ {profile?.carbon_balance ?? 0}
+              ♻️ {profile?.carbon_balance != null ? profile.carbon_balance : 'NULL'}
             </div>
-            <div style={{ color: '#A8D5B5', fontSize: '0.8rem', marginTop: 2 }}>credits available</div>
+            <div style={{ color: '#A8D5B5', fontSize: '0.8rem', marginTop: 2 }}>
+              {profile?.carbon_balance != null ? 'credits available' : 'Contact admin to set your balance'}
+            </div>
           </div>
         </div>
 

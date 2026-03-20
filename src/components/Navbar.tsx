@@ -89,8 +89,8 @@ export default function Navbar() {
                   fontSize: '0.8rem', color: '#2D6A4F', fontWeight: 600,
                   display: 'flex', alignItems: 'center', gap: 4,
                 }}>
-                  <span>🍃</span>
-                  <span>{profile.carbon_balance ?? 0} credits</span>
+                  <span>♻️</span>
+                  <span>{profile.carbon_balance != null ? `${profile.carbon_balance} credits` : 'Contact admin'}</span>
                 </div>
               )}
               <Link href="/sell" style={{
@@ -206,7 +206,7 @@ export default function Navbar() {
                 background: '#E8F5E9', border: '1px solid #A5D6A7',
                 borderRadius: 20, padding: '4px 10px',
                 color: '#2D6A4F', fontWeight: 700, fontSize: '0.82rem',
-              }}>🍃 {profile.carbon_balance ?? 0}</span>
+              }}>♻️ {profile.carbon_balance != null ? profile.carbon_balance : 'Contact admin'}</span>
             </div>
           )}
 
