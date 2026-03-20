@@ -25,15 +25,24 @@ type Listing = {
   profiles: { stall_name: string } | null
 }
 
+type Transaction = {
+  id: string
+  credits_amount: number
+  created_at: string
+  seller: { stall_name: string } | null
+  buyer: { stall_name: string } | null
+}
+
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
 
-  const [tab, setTab] = useState<'profiles' | 'listings'>('profiles')
+  const [tab, setTab] = useState<'profiles' | 'listings' | 'transactions'>('profiles')
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [listings, setListings] = useState<Listing[]>([])
+  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [dataLoading, setDataLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [msg, setMsg] = useState('')
@@ -57,12 +66,13 @@ export default function AdminPage() {
     return res.json()
   }
 
-  const loadData = async (type: 'profiles' | 'listings') => {
+  const loadData = async (type: 'profiles' | 'listings' | 'transactions') => {
     setDataLoading(true)
     setMsg('')
     const { data } = await call(`get-${type}`)
     if (type === 'profiles') setProfiles(data ?? [])
-    else setListings(data ?? [])
+    else if (type === 'listings') setListings(data ?? [])
+    else setTransactions(data ?? [])
     setDataLoading(false)
   }
 
@@ -80,7 +90,7 @@ export default function AdminPage() {
     setActionLoading(null)
   }
 
-  const switchTab = (t: 'profiles' | 'listings') => {
+  const switchTab = (t: 'profiles' | 'listings' | 'transactions') => {
     setTab(t)
     loadData(t)
   }
@@ -167,19 +177,23 @@ export default function AdminPage() {
       <div className="admin-body" style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 24px' }}>
         {/* Tabs */}
         <div className="admin-tabs" style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-          {(['profiles', 'listings'] as const).map(t => (
+          {([
+            { key: 'profiles', label: '👥 Teams' },
+            { key: 'listings', label: '📋 Listings' },
+            { key: 'transactions', label: '🤝 Transactions' },
+          ] as const).map(({ key, label }) => (
             <button
-              key={t}
-              onClick={() => switchTab(t)}
+              key={key}
+              onClick={() => switchTab(key)}
               style={{
-                padding: '9px 22px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                padding: '9px 22px', borderRadius: 20, cursor: 'pointer',
                 fontWeight: 700, fontSize: '0.9rem',
-                background: tab === t ? '#4CAF50' : '#fff',
-                color: tab === t ? '#fff' : '#1A3C2B',
-                border: tab === t ? 'none' : '1.5px solid #C8E6C9',
+                background: tab === key ? '#4CAF50' : '#fff',
+                color: tab === key ? '#fff' : '#1A3C2B',
+                border: tab === key ? 'none' : '1.5px solid #C8E6C9',
               }}
             >
-              {t === 'profiles' ? '👥 Teams' : '📋 Listings'}
+              {label}
             </button>
           ))}
           <button
@@ -267,7 +281,7 @@ export default function AdminPage() {
               </table>
             </div>
           </div>
-        ) : (
+        ) : tab === 'listings' ? (
           // ── Listings table ──
           <div style={{ background: '#fff', border: '1.5px solid #C8E6C9', borderRadius: 16, overflow: 'hidden' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #E8F5E9', fontWeight: 700, color: '#1A3C2B' }}>
@@ -314,6 +328,51 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+        ) : (
+          // ── Transactions table ──
+          <div style={{ background: '#fff', border: '1.5px solid #C8E6C9', borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #E8F5E9', fontWeight: 700, color: '#1A3C2B' }}>
+              {transactions.length} Transactions
+            </div>
+            {transactions.length === 0 ? (
+              <div style={{ padding: '48px', textAlign: 'center', color: '#9E9E9E' }}>
+                No transactions yet. Trades will appear here once teams start marking listings as sold.
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.87rem' }}>
+                  <thead>
+                    <tr style={{ background: '#F0F7F1' }}>
+                      {['#', 'Seller', 'Buyer', 'Credits Traded', 'Date & Time'].map(h => (
+                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#6B7280', fontWeight: 600, fontSize: '0.78rem', textTransform: 'uppercase' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {transactions.map((t, i) => (
+                      <tr key={t.id} style={{ borderTop: '1px solid #E8F5E9', background: i % 2 === 0 ? '#fff' : '#FAFFFE' }}>
+                        <td style={{ padding: '12px 16px', color: '#9E9E9E', fontSize: '0.8rem' }}>{transactions.length - i}</td>
+                        <td style={{ padding: '12px 16px', fontWeight: 600, color: '#C62828' }}>
+                          {t.seller?.stall_name ?? '—'}
+                        </td>
+                        <td style={{ padding: '12px 16px', fontWeight: 600, color: '#2D6A4F' }}>
+                          {t.buyer?.stall_name ?? '—'}
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <span style={{ background: '#E8F5E9', color: '#2D6A4F', borderRadius: 6, padding: '2px 10px', fontWeight: 700 }}>
+                            ♻️ {t.credits_amount} credits
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 16px', color: '#6B7280', fontSize: '0.82rem' }}>
+                          {new Date(t.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>

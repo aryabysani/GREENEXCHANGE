@@ -128,6 +128,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true })
   }
 
+  // ── get-transactions ──────────────────────────────────────────
+  if (action === 'get-transactions') {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*, seller:profiles!transactions_seller_id_fkey(stall_name), buyer:profiles!transactions_buyer_id_fkey(stall_name)')
+      .order('created_at', { ascending: false })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ data })
+  }
+
   // ── remove-listing ────────────────────────────────────────────
   if (action === 'remove-listing') {
     const { error } = await supabase

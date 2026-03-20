@@ -106,11 +106,24 @@ export default function MyListingsPage() {
     }
   }
 
-  const updateStatus = async (id: string, status: 'removed' | 'live') => {
+  const deleteListing = async (id: string, credits: number) => {
     setActionId(id)
     const supabase = createClient()
-    await supabase.from('listings').update({ status }).eq('id', id)
-    setListings(prev => prev.map(l => l.id === id ? { ...l, status } : l))
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Mark listing as removed
+    await supabase.from('listings').update({ status: 'removed' }).eq('id', id)
+
+    // Refund credits back to seller's balance
+    const currentBalance = profile?.carbon_balance ?? 0
+    await supabase
+      .from('profiles')
+      .update({ carbon_balance: currentBalance + credits })
+      .eq('id', user.id)
+
+    setListings(prev => prev.map(l => l.id === id ? { ...l, status: 'removed' } : l))
+    setProfile(prev => prev ? { ...prev, carbon_balance: currentBalance + credits } : prev)
     setActionId(null)
   }
 
@@ -346,7 +359,7 @@ export default function MyListingsPage() {
                             🤝 Sold
                           </button>
                           <button
-                            onClick={() => updateStatus(listing.id, 'removed')}
+                            onClick={() => deleteListing(listing.id, listing.credits_amount)}
                             disabled={isActive}
                             style={{
                               background: '#FFEBEE', color: '#C62828',
