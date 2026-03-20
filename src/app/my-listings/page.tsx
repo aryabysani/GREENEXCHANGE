@@ -17,6 +17,11 @@ type Listing = {
   created_at: string
 }
 
+type Stall = {
+  id: string
+  stall_name: string | null
+}
+
 function timeAgo(date: string) {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
   if (seconds < 60) return 'just now'
@@ -34,36 +39,77 @@ const STATUS_STYLES: Record<string, { bg: string; color: string; label: string; 
 export default function MyListingsPage() {
   const router = useRouter()
   const [listings, setListings] = useState<Listing[]>([])
-  const [profile, setProfile] = useState<{ stall_name: string; carbon_balance: number } | null>(null)
+  const [profile, setProfile] = useState<{ stall_name: string; carbon_balance: number | null } | null>(null)
+  const [allStalls, setAllStalls] = useState<Stall[]>([])
   const [loading, setLoading] = useState(true)
   const [actionId, setActionId] = useState<string | null>(null)
+
+  // Sold modal state
+  const [soldModal, setSoldModal] = useState<{ listingId: string; credits: number } | null>(null)
+  const [selectedBuyer, setSelectedBuyer] = useState('')
+  const [soldLoading, setSoldLoading] = useState(false)
+  const [soldError, setSoldError] = useState('')
 
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) { router.push('/auth'); return }
+      const userId = data.user.id
 
       Promise.all([
         supabase
           .from('listings')
           .select('*')
-          .eq('seller_id', data.user.id)
+          .eq('seller_id', userId)
           .neq('status', 'removed')
           .order('created_at', { ascending: false }),
         supabase
           .from('profiles')
           .select('stall_name, carbon_balance')
-          .eq('id', data.user.id)
+          .eq('id', userId)
           .single(),
-      ]).then(([{ data: listData }, { data: profileData }]) => {
+        supabase
+          .from('profiles')
+          .select('id, stall_name')
+          .neq('id', userId)
+          .order('stall_name'),
+      ]).then(([{ data: listData }, { data: profileData }, { data: stallData }]) => {
         setListings(listData ?? [])
         setProfile(profileData)
+        setAllStalls(stallData ?? [])
         setLoading(false)
       })
     })
   }, [router])
 
-  const updateStatus = async (id: string, status: 'sold' | 'removed' | 'live') => {
+  const openSoldModal = (listingId: string, credits: number) => {
+    setSelectedBuyer('')
+    setSoldError('')
+    setSoldModal({ listingId, credits })
+  }
+
+  const confirmSold = async () => {
+    if (!soldModal || !selectedBuyer) { setSoldError('Please select a buyer.'); return }
+    setSoldLoading(true)
+    setSoldError('')
+    try {
+      const res = await fetch('/api/mark-sold', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listingId: soldModal.listingId, buyerId: selectedBuyer }),
+      })
+      const json = await res.json()
+      if (!res.ok) { setSoldError(json.error ?? 'Something went wrong.'); return }
+      setListings(prev => prev.map(l => l.id === soldModal.listingId ? { ...l, status: 'sold' } : l))
+      setSoldModal(null)
+    } catch {
+      setSoldError('Network error. Try again.')
+    } finally {
+      setSoldLoading(false)
+    }
+  }
+
+  const updateStatus = async (id: string, status: 'removed' | 'live') => {
     setActionId(id)
     const supabase = createClient()
     await supabase.from('listings').update({ status }).eq('id', id)
@@ -74,6 +120,8 @@ export default function MyListingsPage() {
   const liveCount = listings.filter(l => l.status === 'live').length
   const totalCreditsListed = listings.filter(l => l.status === 'live').reduce((s, l) => s + l.credits_amount, 0)
   const totalEarned = listings.filter(l => l.status === 'sold').reduce((s, l) => s + Number(l.total_price), 0)
+
+  const balance = profile?.carbon_balance
 
   if (loading) {
     return (
@@ -93,6 +141,78 @@ export default function MyListingsPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#F0F7F1' }}>
       <Navbar />
+
+      {/* Sold Modal */}
+      {soldModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '0 16px',
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: 20, padding: '32px 28px',
+            maxWidth: 420, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+          }}>
+            <div style={{ fontSize: 36, textAlign: 'center', marginBottom: 8 }}>🤝</div>
+            <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, color: '#1A3C2B', textAlign: 'center', margin: '0 0 4px' }}>
+              Who bought it?
+            </h2>
+            <p style={{ color: '#6B7280', textAlign: 'center', fontSize: '0.88rem', margin: '0 0 20px' }}>
+              Selling <strong>{soldModal.credits} credits</strong> — select the buyer and their balance will be updated automatically.
+            </p>
+
+            <select
+              value={selectedBuyer}
+              onChange={e => setSelectedBuyer(e.target.value)}
+              style={{
+                width: '100%', padding: '12px 14px', borderRadius: 10,
+                border: '1.5px solid #C8E6C9', fontSize: '0.95rem',
+                background: '#F9FBF9', color: '#1A3C2B', marginBottom: 12,
+                outline: 'none', cursor: 'pointer',
+              }}
+            >
+              <option value="">— Select buyer stall —</option>
+              {allStalls.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.stall_name ?? `Stall (${s.id.slice(0, 6)})`}
+                </option>
+              ))}
+            </select>
+
+            {soldError && (
+              <div style={{ color: '#C62828', fontSize: '0.85rem', marginBottom: 10, textAlign: 'center' }}>
+                {soldError}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setSoldModal(null)}
+                disabled={soldLoading}
+                style={{
+                  flex: 1, padding: '11px', borderRadius: 10,
+                  border: '1.5px solid #E0E0E0', background: '#fff',
+                  color: '#6B7280', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSold}
+                disabled={soldLoading || !selectedBuyer}
+                style={{
+                  flex: 1, padding: '11px', borderRadius: 10,
+                  background: selectedBuyer ? '#E65100' : '#ccc',
+                  color: '#fff', fontWeight: 700, cursor: selectedBuyer ? 'pointer' : 'not-allowed',
+                  border: 'none', fontSize: '0.9rem',
+                }}
+              >
+                {soldLoading ? 'Confirming...' : '✅ Confirm Sale'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mylist-container" style={{ maxWidth: 900, margin: '32px auto', padding: '0 24px 64px', width: '100%' }}>
         {/* Header */}
@@ -114,10 +234,21 @@ export default function MyListingsPage() {
         }}>
           <div style={{ background: 'linear-gradient(135deg, #1A3C2B, #2D6A4F)', borderRadius: 14, padding: '16px 20px' }}>
             <div style={{ color: '#A8D5B5', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Carbon Balance</div>
-            <div style={{ color: '#4CAF50', fontWeight: 800, fontSize: '1.8rem', lineHeight: 1 }}>
-              ♻️ {profile?.carbon_balance ?? 0}
-            </div>
-            <div style={{ color: '#A8D5B5', fontSize: '0.78rem' }}>credits remaining</div>
+            {balance === null || balance === undefined ? (
+              <>
+                <div style={{ color: '#FFD600', fontWeight: 800, fontSize: '1.1rem', lineHeight: 1.3 }}>Not set yet</div>
+                <div style={{ color: '#A8D5B5', fontSize: '0.78rem', marginTop: 2 }}>Contact the admin</div>
+              </>
+            ) : (
+              <>
+                <div style={{ color: balance < 0 ? '#FF5252' : '#4CAF50', fontWeight: 800, fontSize: '1.8rem', lineHeight: 1 }}>
+                  ♻️ {balance}
+                </div>
+                <div style={{ color: '#A8D5B5', fontSize: '0.78rem' }}>
+                  {balance < 0 ? '⚠️ deficit' : 'credits remaining'}
+                </div>
+              </>
+            )}
           </div>
           <div style={{ background: '#fff', border: '1.5px solid #C8E6C9', borderRadius: 14, padding: '16px 20px' }}>
             <div style={{ color: '#6B7280', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Active Listings</div>
@@ -206,7 +337,7 @@ export default function MyListingsPage() {
                       {listing.status === 'live' && (
                         <>
                           <button
-                            onClick={() => updateStatus(listing.id, 'sold')}
+                            onClick={() => openSoldModal(listing.id, listing.credits_amount)}
                             disabled={isActive}
                             style={{
                               background: '#FFF3E0', color: '#E65100',
@@ -258,7 +389,6 @@ export default function MyListingsPage() {
       <style>{`
         @media (max-width: 640px) {
           .mylist-container { padding: 0 16px 48px !important; margin-top: 20px !important; }
-          .mylist-title { font-size: 1.5rem !important; }
           .mylist-card { padding: 14px 16px !important; }
           .mylist-actions { width: 100% !important; }
           .mylist-actions a, .mylist-actions button { flex: 1 !important; text-align: center !important; justify-content: center !important; }
