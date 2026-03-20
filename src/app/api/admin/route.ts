@@ -109,7 +109,7 @@ export async function POST(request: Request) {
       .update({
         stall_name: 'Stall (Reset)',
         whatsapp_number: null,
-        carbon_balance: 100,
+        carbon_balance: null,
         is_banned: false,
       })
       .eq('id', id)
