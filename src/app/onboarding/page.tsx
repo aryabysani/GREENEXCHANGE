@@ -12,7 +12,6 @@ export default function OnboardingPage() {
   const [error, setError] = useState('')
 
   const [stallName, setStallName] = useState('')
-  const [carbonCredits, setCarbonCredits] = useState('')
   const [phone, setPhone] = useState('')
 
   useEffect(() => {
@@ -31,8 +30,6 @@ export default function OnboardingPage() {
     if (!stallName.trim()) { setError('Stall name is required.'); return }
     const digits = phone.replace(/\D/g, '')
     if (digits.length !== 10) { setError('Enter a valid 10-digit mobile number.'); return }
-    const credits = parseInt(carbonCredits)
-    if (!credits || credits < 0) { setError('Enter a valid number of credits.'); return }
 
     setSaving(true)
     const supabase = createClient()
@@ -41,7 +38,6 @@ export default function OnboardingPage() {
       .update({
         stall_name: stallName.trim(),
         whatsapp_number: `+91${phone.replace(/\D/g, '')}`,
-        carbon_balance: credits,
       })
       .eq('id', userId)
 
@@ -107,8 +103,8 @@ export default function OnboardingPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', maxWidth: 260 }}>
           {[
             { icon: '🏪', label: 'Tell us your stall name' },
-            { icon: '♻️', label: 'Set your carbon credit balance' },
             { icon: '📱', label: 'Add your WhatsApp for buyers' },
+            { icon: '💸', label: 'Start trading carbon credits' },
           ].map((item) => (
             <div key={item.label} style={{
               background: 'rgba(255,255,255,0.08)',
@@ -179,32 +175,6 @@ export default function OnboardingPage() {
                 onFocus={e => (e.target.style.borderColor = '#4CAF50')}
                 onBlur={e => (e.target.style.borderColor = '#C8E6C9')}
               />
-            </div>
-
-            {/* Carbon credits */}
-            <div>
-              <label style={{ display: 'block', marginBottom: 6, fontSize: '0.875rem', fontWeight: 600, color: '#1A3C2B' }}>
-                ♻️ Carbon Credits You Have *
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={carbonCredits}
-                onChange={e => setCarbonCredits(e.target.value)}
-                placeholder="e.g. 100"
-                required
-                style={{
-                  width: '100%', padding: '12px 14px',
-                  border: '1.5px solid #C8E6C9', borderRadius: 10,
-                  fontSize: '0.95rem', background: '#fff', color: '#1A3C2B',
-                  outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s',
-                }}
-                onFocus={e => (e.target.style.borderColor = '#4CAF50')}
-                onBlur={e => (e.target.style.borderColor = '#C8E6C9')}
-              />
-              <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#9E9E9E' }}>
-                How many carbon credits has the admin assigned to your stall?
-              </p>
             </div>
 
             {/* Phone number */}
