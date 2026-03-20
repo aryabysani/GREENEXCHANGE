@@ -19,7 +19,6 @@ type Listing = {
   profiles: {
     stall_name: string
     whatsapp_number: string | null
-    team_members: string[]
   } | null
 }
 
@@ -37,6 +36,7 @@ export default function ListingDetailPage() {
   const [listing, setListing] = useState<Listing | null>(null)
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
+  const [teamMembers, setTeamMembers] = useState<string[]>([])
   const [actionLoading, setActionLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -46,14 +46,25 @@ export default function ListingDetailPage() {
     Promise.all([
       supabase
         .from('listings')
-        .select('*, profiles(stall_name, whatsapp_number, team_members)')
+        .select('*, profiles(stall_name, whatsapp_number)')
         .eq('id', id)
         .single(),
       supabase.auth.getUser(),
-    ]).then(([{ data: listingData }, { data: authData }]) => {
+    ]).then(([{ data: listingData, error: listingErr }, { data: authData }]) => {
+      if (listingErr || !listingData) { setLoading(false); return }
       setListing(listingData)
       setUserId(authData.user?.id ?? null)
       setLoading(false)
+
+      // Fetch team_members separately — gracefully fails if column doesn't exist
+      supabase
+        .from('profiles')
+        .select('team_members')
+        .eq('id', listingData.seller_id)
+        .single()
+        .then(({ data }) => {
+          if (data?.team_members) setTeamMembers(data.team_members)
+        })
     })
   }, [id])
 
@@ -243,7 +254,7 @@ export default function ListingDetailPage() {
             </div>
 
             {/* Team Details */}
-            {listing.profiles?.team_members && listing.profiles.team_members.length > 0 && (
+            {teamMembers.length > 0 && (
               <div style={{
                 background: '#F0F7F1',
                 border: '1.5px solid #C8E6C9',
@@ -253,11 +264,11 @@ export default function ListingDetailPage() {
                 position: 'relative',
               }}>
                 <div style={{ fontWeight: 700, color: '#1A3C2B', fontSize: '0.9rem', marginBottom: 12 }}>
-                  👥 Team Details — {listing.profiles.stall_name}
+                  👥 Team Details — {listing.profiles?.stall_name}
                 </div>
                 {userId ? (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
-                    {listing.profiles.team_members.map((name, i) => (
+                    {teamMembers.map((name, i) => (
                       <span key={i} style={{
                         background: '#fff',
                         border: '1px solid #C8E6C9',
@@ -275,7 +286,7 @@ export default function ListingDetailPage() {
                   <div style={{ position: 'relative' }}>
                     {/* Blurred placeholder names */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, filter: 'blur(6px)', userSelect: 'none', pointerEvents: 'none' }}>
-                      {listing.profiles.team_members.map((_, i) => (
+                      {teamMembers.map((_, i) => (
                         <span key={i} style={{
                           background: '#fff',
                           border: '1px solid #C8E6C9',
