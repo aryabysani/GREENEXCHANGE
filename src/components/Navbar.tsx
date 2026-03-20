@@ -165,6 +165,18 @@ export default function Navbar() {
         </button>
       </nav>
 
+      {/* Builder bar */}
+      <div style={{
+        background: '#1A3C2B', color: '#A5D6A7',
+        textAlign: 'center', fontSize: '0.75rem',
+        padding: '5px 16px', letterSpacing: '0.01em',
+      }}>
+        Built by{' '}
+        <a href="https://aryab.in" target="_blank" rel="noopener noreferrer" style={{
+          color: '#fff', fontWeight: 600, textDecoration: 'none',
+        }}>Arya Bysani</a>
+      </div>
+
       {/* Mobile menu drawer */}
       {mobileOpen && (
         <div style={{
