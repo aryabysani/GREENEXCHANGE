@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   // Fetch the listing
   const { data: listing, error: listingFetchErr } = await admin
     .from('listings')
-    .select('id, seller_id, credits_amount, status')
+    .select('id, seller_id, credits_amount, status, total_price')
     .eq('id', listingId)
     .single()
 
@@ -64,6 +64,7 @@ export async function POST(request: Request) {
     buyer_id: buyerId,
     seller_id: user.id,
     credits_amount: listing.credits_amount,
+    total_price: listing.total_price,
   })
 
   return NextResponse.json({ success: true })
