@@ -142,8 +142,23 @@ export default function HomePage() {
       .select('*, profiles(stall_name)')
       .eq('status', 'live')
       .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        // filter out hidden listings in JS (is_hidden column may not exist yet)
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Marketplace query error:', error)
+          // Try without the join as fallback
+          supabase
+            .from('listings')
+            .select('*')
+            .eq('status', 'live')
+            .order('created_at', { ascending: false })
+            .then(({ data: data2 }) => {
+              const visible = (data2 ?? []).filter((l: Record<string, unknown>) => l.is_hidden !== true)
+              setListings(visible)
+              setFiltered(visible)
+              setLoading(false)
+            })
+          return
+        }
         const visible = (data ?? []).filter((l: Record<string, unknown>) => l.is_hidden !== true)
         setListings(visible)
         setFiltered(visible)
