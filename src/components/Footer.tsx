@@ -51,7 +51,7 @@ export default function Footer() {
           </div>
         </div>
         <div style={{ borderTop: '1px solid #2D6A4F', paddingTop: 16, fontSize: '0.8rem', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div>© 2025 GreenCredits · Less carbon, more clout ♻️</div>
+          <div>© 2026 GreenCredits · Less carbon, more clout ♻️</div>
           <div>
             Built by{' '}
             <a href="https://aryab.in" target="_blank" rel="noopener noreferrer" style={{ color: '#fff', fontWeight: 600, textDecoration: 'none' }}>
