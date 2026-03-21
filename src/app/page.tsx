@@ -69,7 +69,7 @@ export default function HomePage() {
     })
 
     // Trading status
-    fetch('/api/trading-status').then(r => r.json()).then(d => setTradingActive(d.active === true))
+    fetch('/api/trading-status', { cache: 'no-store' }).then(r => r.json()).then(d => setTradingActive(d.active === true))
 
     // Sell orders (live listings), sorted by price ASC
     supabase

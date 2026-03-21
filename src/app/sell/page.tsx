@@ -33,7 +33,7 @@ export default function SellPage() {
       supabase.from('profiles').select('stall_name, carbon_balance, whatsapp_number').eq('id', data.user.id).single()
         .then(({ data: p }) => { setProfile(p); setAuthLoading(false) })
     })
-    fetch('/api/trading-status').then(r => r.json()).then(d => setTradingActive(d.active !== false))
+    fetch('/api/trading-status', { cache: 'no-store' }).then(r => r.json()).then(d => setTradingActive(d.active !== false))
   }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -10,5 +10,8 @@ const admin = createClient(
 
 export async function GET() {
   const { data } = await admin.from('system_settings').select('value').eq('key', 'trading_active').single()
-  return NextResponse.json({ active: data?.value === 'true' })
+  return NextResponse.json(
+    { active: data?.value === 'true' },
+    { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate', 'Pragma': 'no-cache' } }
+  )
 }
