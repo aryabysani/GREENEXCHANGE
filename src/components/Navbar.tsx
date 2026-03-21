@@ -67,7 +67,6 @@ export default function Navbar() {
           {[
             { href: '/', label: 'Marketplace' },
             { href: '/how-it-works', label: 'How It Works' },
-            { href: '/about', label: 'About' },
           ].map(({ href, label }) => (
             <Link key={href} href={href} style={{
               color: navActive(href) ? '#4CAF50' : '#1A3C2B',
@@ -237,7 +236,6 @@ export default function Navbar() {
             {[
               { href: '/', label: 'Marketplace' },
               { href: '/how-it-works', label: 'How It Works' },
-              { href: '/about', label: 'About' },
               ...(user ? [
                 { href: '/my-orders', label: 'My Orders' },
                 { href: '/profile', label: 'Profile' },

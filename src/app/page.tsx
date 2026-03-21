@@ -137,55 +137,74 @@ export default function HomePage() {
 
       {/* Hero */}
       <div style={{
-        background: 'linear-gradient(135deg, #0D2818 0%, #1A3C2B 50%, #0D2818 100%)',
-        padding: '40px 24px 32px',
+        background: 'linear-gradient(160deg, #071A0F 0%, #0D2818 40%, #0A1F14 100%)',
+        padding: '48px 24px 40px',
         borderBottom: '1px solid #1E3A2F',
+        position: 'relative',
+        overflow: 'hidden',
       }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-            <div>
-              <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', color: '#fff', marginBottom: 4 }}>
-                Green<span style={{ color: '#4CAF50' }}>Credits</span> <span style={{ fontSize: '1rem', color: '#6B7280' }}>Exchange</span>
-              </div>
-              <p style={{ color: '#6B9E7E', margin: 0, fontSize: '0.9rem' }}>
-                Sitting on carbon credits like it&apos;s a flex?<br />
-                Time to trade. Turn good eco-behavior into cold hard rupees. 💸
-              </p>
-              <div style={{ marginTop: 8, fontSize: '0.8rem', color: '#4A7C5E' }}>
-                <strong style={{ color: '#C8E6C9' }}>Balance = emissions allowed − your carbon footprint.</strong>{' '}
-                <strong style={{ color: '#4CAF50' }}>Surplus</strong> → sell.{' '}
-                <strong style={{ color: '#FF5252' }}>Deficit</strong> → buy.
-              </div>
-            </div>
+        {/* Background glow */}
+        <div style={{ position: 'absolute', top: -80, left: '30%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(76,175,80,0.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
-            {/* Trading status + CTA */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                background: tradingActive ? 'rgba(76,175,80,0.15)' : 'rgba(255,82,82,0.15)',
-                border: `1px solid ${tradingActive ? '#4CAF50' : '#FF5252'}`,
-                borderRadius: 20, padding: '6px 14px',
-              }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: tradingActive ? '#4CAF50' : '#FF5252', display: 'inline-block', animation: tradingActive ? 'pulse 1.5s infinite' : 'none' }} />
-                <span style={{ color: tradingActive ? '#4CAF50' : '#FF5252', fontWeight: 700, fontSize: '0.85rem' }}>
-                  {tradingActive === null ? 'Checking...' : tradingActive ? 'TRADING OPEN' : 'TRADING CLOSED'}
+        <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative' }}>
+          {/* Status pill */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              background: tradingActive ? 'rgba(76,175,80,0.12)' : 'rgba(255,82,82,0.12)',
+              border: `1px solid ${tradingActive ? 'rgba(76,175,80,0.4)' : 'rgba(255,82,82,0.4)'}`,
+              borderRadius: 20, padding: '5px 14px',
+            }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: tradingActive ? '#4CAF50' : '#FF5252', display: 'inline-block', animation: tradingActive ? 'pulse 1.5s infinite' : 'none' }} />
+              <span style={{ color: tradingActive ? '#4CAF50' : '#FF5252', fontWeight: 700, fontSize: '0.78rem', letterSpacing: '0.08em' }}>
+                {tradingActive === null ? 'CHECKING...' : tradingActive ? 'MARKET OPEN' : 'MARKET CLOSED'}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24 }}>
+            <div style={{ maxWidth: 600 }}>
+              <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 900, fontSize: 'clamp(2rem, 5vw, 3.2rem)', color: '#fff', margin: '0 0 6px', lineHeight: 1.05, letterSpacing: '-0.03em' }}>
+                Green<span style={{ color: '#4CAF50' }}>Credits</span><br />
+                <span style={{ color: '#A8D5B5', fontWeight: 700, fontSize: '0.55em', letterSpacing: '-0.01em' }}>Carbon Exchange — EcoXchange 2025</span>
+              </h1>
+              <p style={{ color: '#6B9E7E', margin: '12px 0 0', fontSize: '0.95rem', lineHeight: 1.6 }}>
+                Surplus credits? Sell them. In deficit? Buy to offset.<br />
+                <span style={{ color: '#4A7C5E', fontSize: '0.85rem' }}>
+                  <strong style={{ color: '#C8E6C9' }}>Balance = emissions allowed − carbon footprint.</strong>
                 </span>
-              </div>
+              </p>
 
               {tradingActive && (
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {(userBalance === undefined || userBalance === null || userBalance > 0) && (
-                    <Link href="/sell" style={{ background: '#4CAF50', color: '#fff', padding: '8px 20px', borderRadius: 20, textDecoration: 'none', fontWeight: 700, fontSize: '0.88rem' }}>
-                      + Sell Credits
+                <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
+                  {(userBalance === undefined || userBalance === null || userBalance >= 0) && (
+                    <Link href="/sell" style={{ background: 'linear-gradient(135deg, #2E7D32, #4CAF50)', color: '#fff', padding: '11px 24px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '0.9rem', boxShadow: '0 4px 16px rgba(76,175,80,0.25)' }}>
+                      ♻️ Sell Credits
                     </Link>
                   )}
                   {(userBalance === undefined || userBalance === null || userBalance < 0) && (
-                    <Link href="/buy" style={{ background: '#7B1FA2', color: '#fff', padding: '8px 20px', borderRadius: 20, textDecoration: 'none', fontWeight: 700, fontSize: '0.88rem' }}>
+                    <Link href="/buy" style={{ background: 'linear-gradient(135deg, #4A148C, #7B1FA2)', color: '#fff', padding: '11px 24px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '0.9rem', boxShadow: '0 4px 16px rgba(123,31,162,0.25)' }}>
                       📈 Buy Credits
                     </Link>
                   )}
                 </div>
               )}
+            </div>
+
+            {/* Live stats */}
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(76,175,80,0.2)', borderRadius: 14, padding: '14px 20px', minWidth: 110, textAlign: 'center' }}>
+                <div style={{ color: '#4CAF50', fontWeight: 800, fontSize: '1.6rem', fontFamily: 'Syne, sans-serif' }}>{totalSellCredits}</div>
+                <div style={{ color: '#6B9E7E', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>Credits for sale</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(123,31,162,0.2)', borderRadius: 14, padding: '14px 20px', minWidth: 110, textAlign: 'center' }}>
+                <div style={{ color: '#CE93D8', fontWeight: 800, fontSize: '1.6rem', fontFamily: 'Syne, sans-serif' }}>{totalBuyCredits}</div>
+                <div style={{ color: '#9E6BA8', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>Credits wanted</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '14px 20px', minWidth: 110, textAlign: 'center' }}>
+                <div style={{ color: '#fff', fontWeight: 800, fontSize: '1.6rem', fontFamily: 'Syne, sans-serif' }}>{trades.length}</div>
+                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>Recent trades</div>
+              </div>
             </div>
           </div>
         </div>
@@ -200,23 +219,6 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Stats bar */}
-      <div style={{ background: '#161B22', borderBottom: '1px solid #1E3A2F', padding: '12px 24px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', gap: 32, justifyContent: 'center', flexWrap: 'wrap' }}>
-          {[
-            { label: 'Sell Orders', value: availableSell.length, color: '#4CAF50' },
-            { label: 'Buy Orders', value: availableBuy.length, color: '#CE93D8' },
-            { label: 'Credits for Sale', value: totalSellCredits, color: '#4CAF50' },
-            { label: 'Credits Wanted', value: totalBuyCredits, color: '#CE93D8' },
-            { label: 'Trades Executed', value: trades.length, color: '#FFB74D' },
-          ].map(stat => (
-            <div key={stat.label} style={{ textAlign: 'center' }}>
-              <div style={{ fontWeight: 800, fontSize: '1.3rem', color: stat.color }}>{loading ? '—' : stat.value}</div>
-              <div style={{ fontSize: '0.72rem', color: '#6B7280' }}>{stat.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Order Book */}
       <div style={{ maxWidth: 1100, margin: '24px auto', padding: '0 16px', width: '100%' }}>
