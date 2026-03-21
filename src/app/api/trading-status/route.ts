@@ -8,11 +8,12 @@ export async function GET() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
-  const { data, error } = await admin.from('system_settings').select('value').eq('key', 'trading_active').single()
+  const { data: single, error } = await admin.from('system_settings').select('value').eq('key', 'trading_active').single()
+  const { data: all } = await admin.from('system_settings').select('*')
   return NextResponse.json(
     {
-      active: data?.value === 'true',
-      _debug: { raw: data?.value, error: error?.message, url: process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(0, 40) }
+      active: single?.value === 'true',
+      _debug: { raw: single?.value, error: error?.message, allRows: all, url: process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(0, 40) }
     },
     { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate', 'Pragma': 'no-cache' } }
   )
