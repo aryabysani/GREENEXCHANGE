@@ -163,34 +163,43 @@ export async function POST(request: Request) {
 
   // ── toggle-trading ─────────────────────────────────────────────
   if (action === 'toggle-trading') {
-    const { data: current } = await supabase
+    const { data: current, error: readCurrentErr } = await supabase
       .from('system_settings')
       .select('value')
       .eq('key', 'trading_active')
       .single()
     const newValue = current?.value === 'true' ? 'false' : 'true'
-    // Update and get the updated row back — if data is null, row didn't exist
     const { data: updated, error: updateErr } = await supabase
       .from('system_settings')
       .update({ value: newValue })
       .eq('key', 'trading_active')
       .select('value')
       .single()
+    let insertErr = null
     if (updateErr || !updated) {
-      // Row missing — insert it
-      const { error: insertErr } = await supabase
+      const { error: ie } = await supabase
         .from('system_settings')
         .insert({ key: 'trading_active', value: newValue })
-      if (insertErr) return NextResponse.json({ error: `Insert failed: ${insertErr.message}` }, { status: 500 })
+      insertErr = ie
     }
-    // Read back to confirm what's actually in DB
     const { data: confirmed, error: readErr } = await supabase
       .from('system_settings')
       .select('value')
       .eq('key', 'trading_active')
       .single()
-    if (readErr) return NextResponse.json({ error: `Read failed: ${readErr.message}` }, { status: 500 })
-    return NextResponse.json({ active: confirmed?.value === 'true' })
+    return NextResponse.json({
+      active: confirmed?.value === 'true',
+      _debug: {
+        currentInDB: current?.value,
+        readCurrentErr: readCurrentErr?.message,
+        attempted: newValue,
+        updateErr: updateErr?.message,
+        updatedRow: updated?.value,
+        insertErr: insertErr?.message,
+        confirmedInDB: confirmed?.value,
+        readErr: readErr?.message,
+      }
+    })
   }
 
   // ── get-trading-status ─────────────────────────────────────────
