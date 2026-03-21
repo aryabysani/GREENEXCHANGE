@@ -332,9 +332,9 @@ export default function HomePage() {
 
         {/* Quick links */}
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 20, flexWrap: 'wrap' }}>
-          <Link href="/how-it-works" style={{ color: '#4A7C5E', fontSize: '0.85rem', textDecoration: 'none' }}>How It Works →</Link>
-          <Link href="/about" style={{ color: '#4A7C5E', fontSize: '0.85rem', textDecoration: 'none' }}>About →</Link>
-          <Link href="/my-listings" style={{ color: '#4A7C5E', fontSize: '0.85rem', textDecoration: 'none' }}>My Orders →</Link>
+          <Link href="/my-listings" style={{ color: '#4A7C5E', fontSize: '0.85rem', textDecoration: 'none' }}>
+            {userBalance != null && userBalance < 0 ? 'My Buy Orders →' : 'My Orders →'}
+          </Link>
         </div>
       </div>
 
