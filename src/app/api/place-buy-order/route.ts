@@ -53,6 +53,12 @@ async function matchBuyOrder(buyOrderId: string, buyerId: string, totalQty: numb
     status: filledSoFar >= totalQty ? 'filled' : (filledSoFar > 0 ? 'partial' : 'open'),
   }).eq('id', buyOrderId)
 
+  // Auto-cancel remaining buy orders if buyer's balance is now non-negative
+  const { data: finalProfile } = await admin.from('profiles').select('carbon_balance').eq('id', buyerId).single()
+  if (finalProfile?.carbon_balance != null && finalProfile.carbon_balance >= 0) {
+    await admin.from('buy_orders').update({ status: 'cancelled' }).eq('buyer_id', buyerId).in('status', ['open', 'partial']).neq('id', buyOrderId)
+  }
+
   return filledSoFar
 }
 

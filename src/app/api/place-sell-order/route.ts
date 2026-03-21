@@ -32,7 +32,8 @@ async function matchSellOrder(listingId: string, sellerId: string, totalQty: num
     }).eq('id', bo.id)
 
     const { data: bp } = await admin.from('profiles').select('carbon_balance').eq('id', bo.buyer_id).single()
-    await admin.from('profiles').update({ carbon_balance: (bp?.carbon_balance ?? 0) + fillQty }).eq('id', bo.buyer_id)
+    const newBuyerBalance = (bp?.carbon_balance ?? 0) + fillQty
+    await admin.from('profiles').update({ carbon_balance: newBuyerBalance }).eq('id', bo.buyer_id)
 
     await admin.from('transactions').insert({
       listing_id: listingId,
@@ -42,6 +43,11 @@ async function matchSellOrder(listingId: string, sellerId: string, totalQty: num
       price_per_credit: tradePrice,
       total_price: fillQty * tradePrice,
     })
+
+    // Auto-cancel buyer's remaining open buy orders if balance is now non-negative
+    if (newBuyerBalance >= 0) {
+      await admin.from('buy_orders').update({ status: 'cancelled' }).eq('buyer_id', bo.buyer_id).in('status', ['open', 'partial'])
+    }
 
     remainingQty -= fillQty
   }

@@ -74,25 +74,41 @@ export default function HomePage() {
     // Sell orders (live listings), sorted by price ASC
     supabase
       .from('listings')
-      .select('*, profiles(stall_name)')
+      .select('*')
       .eq('status', 'live')
       .eq('is_hidden', false)
       .order('price_per_credit', { ascending: true })
-      .then(({ data, error }) => {
-        if (!error) setSellOrders(data ?? [])
-        else {
-          supabase.from('listings').select('*').eq('status', 'live').order('price_per_credit', { ascending: true })
-            .then(({ data: d2 }) => setSellOrders((d2 ?? []).filter((l: Record<string, unknown>) => !l.is_hidden)))
+      .then(async ({ data }) => {
+        const orders = data ?? []
+        const ids = Array.from(new Set(orders.map((o: Record<string, string>) => o.seller_id).filter(Boolean)))
+        if (ids.length > 0) {
+          const { data: profs } = await supabase.from('profiles').select('id, stall_name').in('id', ids)
+          const map: Record<string, string> = {}
+          for (const p of profs ?? []) map[p.id] = p.stall_name
+          setSellOrders(orders.map((o: Record<string, unknown>) => ({ ...o, profiles: { stall_name: map[o.seller_id as string] ?? '—' } })) as SellOrder[])
+        } else {
+          setSellOrders(orders)
         }
       })
 
     // Buy orders (open/partial), sorted by price DESC
     supabase
       .from('buy_orders')
-      .select('*, profiles(stall_name)')
+      .select('*')
       .in('status', ['open', 'partial'])
       .order('price_per_credit', { ascending: false })
-      .then(({ data }) => setBuyOrders(data ?? []))
+      .then(async ({ data }) => {
+        const orders = data ?? []
+        const ids = Array.from(new Set(orders.map((o: Record<string, string>) => o.buyer_id).filter(Boolean)))
+        if (ids.length > 0) {
+          const { data: profs } = await supabase.from('profiles').select('id, stall_name').in('id', ids)
+          const map: Record<string, string> = {}
+          for (const p of profs ?? []) map[p.id] = p.stall_name
+          setBuyOrders(orders.map((o: Record<string, unknown>) => ({ ...o, profiles: { stall_name: map[o.buyer_id as string] ?? '—' } })) as BuyOrder[])
+        } else {
+          setBuyOrders(orders)
+        }
+      })
 
     // Recent trades + stall name map
     supabase
