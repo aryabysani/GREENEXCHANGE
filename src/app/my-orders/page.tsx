@@ -74,7 +74,7 @@ export default function MyOrdersPage() {
       if (!data.user) { router.push('/auth'); return }
       const uid = data.user.id
       setUserId(uid)
-
+      try {
       const [
         { data: profileData },
         { data: buyOrderData },
@@ -108,7 +108,7 @@ export default function MyOrdersPage() {
       setSellTrades((sellTradeData ?? []).map(t => ({ ...t, buyerStall: stallMap[t.buyer_id] ?? '—' })))
 
       if (profileData?.carbon_balance != null && profileData.carbon_balance >= 0) setTab('sales')
-      setLoading(false)
+      } catch { /* queries failed — still stop loading */ } finally { setLoading(false) }
     })
   }, [router])
 

@@ -361,7 +361,7 @@ export default function AdminPage() {
             </div>
             {transactions.length === 0 ? (
               <div style={{ padding: '48px', textAlign: 'center', color: '#9E9E9E' }}>
-                No transactions yet. Trades will appear here once teams start marking listings as sold.
+                No transactions yet. Trades appear here automatically when buy and sell orders match.
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>

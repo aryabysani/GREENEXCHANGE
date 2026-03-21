@@ -28,10 +28,9 @@ export default function BuyPage() {
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) { router.push('/auth'); return }
       supabase.from('profiles').select('team_username, carbon_balance').eq('id', data.user.id).single()
-        .then(({ data: p }) => {
-          setProfile(p)
-          setAuthLoading(false)
-        })
+        .then(({ data: p }) => setProfile(p))
+        .catch(() => {})
+        .finally(() => setAuthLoading(false))
     })
     const checkTrading = () =>
       fetch(`/api/trading-status?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(d => setTradingActive(d.active !== false))
