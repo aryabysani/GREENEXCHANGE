@@ -93,7 +93,6 @@ export default function HomePage() {
       .in('status', ['open', 'partial'])
       .order('price_per_credit', { ascending: false })
       .then(({ data }) => setBuyOrders(data ?? []))
-      .catch(() => setBuyOrders([]))
 
     // Recent trades
     supabase
