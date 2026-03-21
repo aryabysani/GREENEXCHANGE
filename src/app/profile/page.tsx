@@ -10,7 +10,7 @@ import Footer from '@/components/Footer'
 export default function ProfilePage() {
   const router = useRouter()
   const [profile, setProfile] = useState<{
-    stall_name: string
+    team_username: string
     carbon_balance: number
     team_members: string[]
   } | null>(null)
@@ -25,7 +25,7 @@ export default function ProfilePage() {
       setEmail(data.user.email ?? '')
       supabase
         .from('profiles')
-        .select('stall_name, carbon_balance, team_members')
+        .select('team_username, carbon_balance, team_members')
         .eq('id', data.user.id)
         .single()
         .then(({ data: p }) => {
@@ -102,7 +102,7 @@ export default function ProfilePage() {
               Username <span style={{ color: '#C8E6C9' }}>(set by admin)</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1A3C2B' }}>
-              {profile?.stall_name ?? '—'}
+              {profile?.team_username ?? '—'}
             </div>
           </div>
           <div>

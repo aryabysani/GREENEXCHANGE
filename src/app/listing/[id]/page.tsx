@@ -16,7 +16,7 @@ type Listing = {
   created_at: string
   seller_id: string
   profiles: {
-    stall_name: string
+    team_username: string
   } | null
 }
 
@@ -42,7 +42,7 @@ export default function ListingDetailPage() {
     Promise.all([
       supabase
         .from('listings')
-        .select('*, profiles(stall_name)')
+        .select('*, profiles(team_username)')
         .eq('id', id)
         .single(),
       supabase.auth.getUser(),
@@ -60,7 +60,7 @@ export default function ListingDetailPage() {
         if (listingOnly) {
           const { data: profileData } = await supabase
             .from('profiles')
-            .select('stall_name')
+            .select('team_username')
             .eq('id', listingOnly.seller_id)
             .single()
           finalListing = { ...listingOnly, profiles: profileData ?? null }
@@ -184,7 +184,7 @@ export default function ListingDetailPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
               <div>
                 <div style={{ color: '#A8D5B5', fontSize: '0.8rem', fontWeight: 600, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  {listing.profiles?.stall_name ?? 'Unknown Stall'}
+                  {listing.profiles?.team_username ?? 'Unknown Stall'}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontSize: 28 }}>♻️</span>
@@ -250,7 +250,7 @@ export default function ListingDetailPage() {
                 position: 'relative',
               }}>
                 <div style={{ fontWeight: 700, color: '#1A3C2B', fontSize: '0.9rem', marginBottom: 12 }}>
-                  👥 Team Details — {listing.profiles?.stall_name}
+                  👥 Team Details — {listing.profiles?.team_username}
                 </div>
                 {userId ? (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>

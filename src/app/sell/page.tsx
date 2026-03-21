@@ -10,7 +10,7 @@ import Footer from '@/components/Footer'
 export default function SellPage() {
   const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
-  const [profile, setProfile] = useState<{ stall_name: string; carbon_balance: number | null } | null>(null)
+  const [profile, setProfile] = useState<{ team_username: string; carbon_balance: number | null } | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [tradingActive, setTradingActive] = useState(true)
 
@@ -29,7 +29,7 @@ export default function SellPage() {
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) { router.push('/auth'); return }
       setUserId(data.user.id)
-      supabase.from('profiles').select('stall_name, carbon_balance').eq('id', data.user.id).single()
+      supabase.from('profiles').select('team_username, carbon_balance').eq('id', data.user.id).single()
         .then(({ data: p }) => { setProfile(p); setAuthLoading(false) })
     })
     fetch(`/api/trading-status?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(d => setTradingActive(d.active !== false))
@@ -60,7 +60,7 @@ export default function SellPage() {
     // Refresh profile balance
     if (userId) {
       const supabase = createClient()
-      supabase.from('profiles').select('stall_name, carbon_balance, whatsapp_number').eq('id', userId).single()
+      supabase.from('profiles').select('team_username, carbon_balance, whatsapp_number').eq('id', userId).single()
         .then(({ data: p }) => setProfile(p))
     }
   }
@@ -121,7 +121,7 @@ export default function SellPage() {
               </div>
             </div>
             <div style={{ color: '#A8D5B5', fontSize: '0.82rem', textAlign: 'right' }}>
-              {profile.stall_name}
+              {profile.team_username}
             </div>
           </div>
         )}

@@ -9,7 +9,7 @@ const ADMIN_SECRET = 'GreenAdmin@2025'
 type Profile = {
   id: string
   username: string
-  stall_name: string
+  team_username: string
   carbon_balance: number
   is_banned: boolean
 }
@@ -21,7 +21,7 @@ type Listing = {
   total_price: number
   status: string
   created_at: string
-  profiles: { stall_name: string } | null
+  profiles: { team_username: string } | null
 }
 
 type Transaction = {
@@ -250,7 +250,7 @@ export default function AdminPage() {
               <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.87rem' }}>
                 <thead>
                   <tr style={{ background: '#F0F7F1' }}>
-                    {['Username', 'Stall Name', 'Balance', 'Status', 'Actions'].map(h => (
+                    {['Username', 'Team Username', 'Balance', 'Status', 'Actions'].map(h => (
                       <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#6B7280', fontWeight: 600, fontSize: '0.78rem', textTransform: 'uppercase' }}>{h}</th>
                     ))}
                   </tr>
@@ -259,7 +259,7 @@ export default function AdminPage() {
                   {profiles.map((p, i) => (
                     <tr key={p.id} style={{ borderTop: '1px solid #E8F5E9', background: p.is_banned ? '#FFF3F3' : i % 2 === 0 ? '#fff' : '#FAFFFE' }}>
                       <td style={{ padding: '12px 16px', color: '#6B7280', fontFamily: 'monospace', fontSize: '0.85rem' }}>{p.username}</td>
-                      <td style={{ padding: '12px 16px', fontWeight: 600, color: '#1A3C2B' }}>{p.stall_name}</td>
+                      <td style={{ padding: '12px 16px', fontWeight: 600, color: '#1A3C2B' }}>{p.team_username}</td>
                       <td style={{ padding: '12px 16px' }}>
                         <span style={{ background: '#E8F5E9', color: '#2D6A4F', borderRadius: 6, padding: '2px 8px', fontWeight: 700 }}>
                           ♻️ {p.carbon_balance}
@@ -274,7 +274,7 @@ export default function AdminPage() {
                       <td style={{ padding: '12px 16px' }}>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           <button
-                            onClick={() => handleAction('reset-profile', p.id, `Reset ${p.stall_name}`)}
+                            onClick={() => handleAction('reset-profile', p.id, `Reset ${p.team_username}`)}
                             disabled={actionLoading === p.id + 'reset-profile'}
                             style={{ background: '#FFF3E0', color: '#E65100', border: '1px solid #FFE082', borderRadius: 6, padding: '4px 10px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
                           >
@@ -282,7 +282,7 @@ export default function AdminPage() {
                           </button>
                           {p.is_banned ? (
                             <button
-                              onClick={() => handleAction('unban', p.id, `Unban ${p.stall_name}`)}
+                              onClick={() => handleAction('unban', p.id, `Unban ${p.team_username}`)}
                               disabled={actionLoading === p.id + 'unban'}
                               style={{ background: '#E8F5E9', color: '#2D6A4F', border: '1px solid #C8E6C9', borderRadius: 6, padding: '4px 10px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
                             >
@@ -290,7 +290,7 @@ export default function AdminPage() {
                             </button>
                           ) : (
                             <button
-                              onClick={() => handleAction('ban', p.id, `Ban ${p.stall_name}`)}
+                              onClick={() => handleAction('ban', p.id, `Ban ${p.team_username}`)}
                               disabled={actionLoading === p.id + 'ban'}
                               style={{ background: '#FFEBEE', color: '#C62828', border: '1px solid #FFCDD2', borderRadius: 6, padding: '4px 10px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
                             >
@@ -323,7 +323,7 @@ export default function AdminPage() {
                 <tbody>
                   {listings.map((l, i) => (
                     <tr key={l.id} style={{ borderTop: '1px solid #E8F5E9', background: i % 2 === 0 ? '#fff' : '#FAFFFE' }}>
-                      <td style={{ padding: '12px 16px', fontWeight: 600, color: '#1A3C2B' }}>{l.profiles?.stall_name ?? '—'}</td>
+                      <td style={{ padding: '12px 16px', fontWeight: 600, color: '#1A3C2B' }}>{l.profiles?.team_username ?? '—'}</td>
                       <td style={{ padding: '12px 16px', color: '#1A3C2B' }}>♻️ {l.credits_amount}</td>
                       <td style={{ padding: '12px 16px', color: '#6B7280' }}>₹{Number(l.price_per_credit).toFixed(0)}</td>
                       <td style={{ padding: '12px 16px', fontWeight: 700, color: '#4CAF50' }}>₹{Number(l.total_price).toFixed(0)}</td>

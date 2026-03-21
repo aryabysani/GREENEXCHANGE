@@ -14,7 +14,7 @@ type SellOrder = {
   status: string
   created_at: string
   seller_id: string
-  profiles: { stall_name: string } | null
+  profiles: { team_username: string } | null
 }
 
 type BuyOrder = {
@@ -25,7 +25,7 @@ type BuyOrder = {
   status: string
   created_at: string
   buyer_id: string
-  profiles: { stall_name: string } | null
+  profiles: { team_username: string } | null
 }
 
 type Trade = {
@@ -71,65 +71,58 @@ export default function HomePage() {
     // Trading status
     fetch(`/api/trading-status?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(d => setTradingActive(d.active === true))
 
-    // Sell orders (live listings), sorted by price ASC
-    supabase
-      .from('listings')
-      .select('*')
-      .eq('status', 'live')
-      .eq('is_hidden', false)
-      .order('price_per_credit', { ascending: true })
-      .then(async ({ data }) => {
-        const orders = data ?? []
-        const ids = Array.from(new Set(orders.map((o: Record<string, string>) => o.seller_id).filter(Boolean)))
-        if (ids.length > 0) {
-          const { data: profs } = await supabase.from('profiles').select('id, stall_name').in('id', ids)
-          const map: Record<string, string> = {}
-          for (const p of profs ?? []) map[p.id] = p.stall_name
-          setSellOrders(orders.map((o: Record<string, unknown>) => ({ ...o, profiles: { stall_name: map[o.seller_id as string] ?? '—' } })) as SellOrder[])
-        } else {
-          setSellOrders(orders)
-        }
-      })
+    const fetchSellOrders = async () => {
+      const { data } = await supabase.from('listings').select('*').eq('status', 'live').eq('is_hidden', false).order('price_per_credit', { ascending: true })
+      const orders = data ?? []
+      const ids = Array.from(new Set(orders.map((o: Record<string, string>) => o.seller_id).filter(Boolean)))
+      if (ids.length > 0) {
+        const { data: profs } = await supabase.from('profiles').select('id, team_username').in('id', ids)
+        const map: Record<string, string> = {}
+        for (const p of profs ?? []) map[p.id] = p.team_username
+        setSellOrders(orders.map((o: Record<string, unknown>) => ({ ...o, profiles: { team_username: map[o.seller_id as string] ?? '—' } })) as SellOrder[])
+      } else {
+        setSellOrders([])
+      }
+    }
 
-    // Buy orders (open/partial), sorted by price DESC
-    supabase
-      .from('buy_orders')
-      .select('*')
-      .in('status', ['open', 'partial'])
-      .order('price_per_credit', { ascending: false })
-      .then(async ({ data }) => {
-        const orders = data ?? []
-        const ids = Array.from(new Set(orders.map((o: Record<string, string>) => o.buyer_id).filter(Boolean)))
-        if (ids.length > 0) {
-          const { data: profs } = await supabase.from('profiles').select('id, stall_name').in('id', ids)
-          const map: Record<string, string> = {}
-          for (const p of profs ?? []) map[p.id] = p.stall_name
-          setBuyOrders(orders.map((o: Record<string, unknown>) => ({ ...o, profiles: { stall_name: map[o.buyer_id as string] ?? '—' } })) as BuyOrder[])
-        } else {
-          setBuyOrders(orders)
-        }
-      })
+    const fetchBuyOrders = async () => {
+      const { data } = await supabase.from('buy_orders').select('*').in('status', ['open', 'partial']).order('price_per_credit', { ascending: false })
+      const orders = data ?? []
+      const ids = Array.from(new Set(orders.map((o: Record<string, string>) => o.buyer_id).filter(Boolean)))
+      if (ids.length > 0) {
+        const { data: profs } = await supabase.from('profiles').select('id, team_username').in('id', ids)
+        const map: Record<string, string> = {}
+        for (const p of profs ?? []) map[p.id] = p.team_username
+        setBuyOrders(orders.map((o: Record<string, unknown>) => ({ ...o, profiles: { team_username: map[o.buyer_id as string] ?? '—' } })) as BuyOrder[])
+      } else {
+        setBuyOrders([])
+      }
+    }
 
-    // Recent trades + stall name map
-    supabase
-      .from('transactions')
-      .select('id, credits_amount, price_per_credit, total_price, created_at, seller_id, buyer_id')
-      .order('created_at', { ascending: false })
-      .limit(15)
-      .then(({ data }) => {
-        setTrades(data ?? [])
-        const ids = Array.from(new Set((data ?? []).flatMap(t => [t.seller_id, t.buyer_id])))
-        if (ids.length > 0) {
-          supabase.from('profiles').select('id, stall_name').in('id', ids)
-            .then(({ data: profiles }) => {
-              const map: Record<string, string> = {}
-              for (const p of profiles ?? []) map[p.id] = p.stall_name
-              setUsernameMap(map)
-            })
-        }
-      })
+    const fetchTrades = async () => {
+      const { data } = await supabase.from('transactions').select('id, credits_amount, price_per_credit, total_price, created_at, seller_id, buyer_id').order('created_at', { ascending: false }).limit(15)
+      setTrades(data ?? [])
+      const ids = Array.from(new Set((data ?? []).flatMap((t: Trade) => [t.seller_id, t.buyer_id])))
+      if (ids.length > 0) {
+        const { data: profiles } = await supabase.from('profiles').select('id, team_username').in('id', ids)
+        const map: Record<string, string> = {}
+        for (const p of profiles ?? []) map[p.id] = p.team_username
+        setUsernameMap(map)
+      }
+    }
 
-    setLoading(false)
+    // Initial load
+    Promise.all([fetchSellOrders(), fetchBuyOrders(), fetchTrades()]).then(() => setLoading(false))
+
+    // Realtime subscriptions — auto-update when any order or trade changes
+    const channel = supabase
+      .channel('order-book')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'listings' }, () => fetchSellOrders())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'buy_orders' }, () => fetchBuyOrders())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => { fetchTrades(); fetchSellOrders(); fetchBuyOrders() })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [])
 
   const availableSell = sellOrders.map(s => ({ ...s, available: s.credits_amount - (s.filled_quantity ?? 0) })).filter(s => s.available > 0)
@@ -266,7 +259,7 @@ export default function HomePage() {
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
                       <span style={{ color: '#C8E6C9', fontSize: '0.85rem', fontWeight: 500 }}>
-                        {order.profiles?.stall_name ?? '—'}
+                        {order.profiles?.team_username ?? '—'}
                       </span>
                       <span style={{ color: '#4CAF50', fontSize: '0.88rem', fontWeight: 700 }}>
                         ₹{Number(order.price_per_credit).toFixed(0)}
@@ -308,7 +301,7 @@ export default function HomePage() {
                     borderBottom: i < availableBuy.length - 1 ? '1px solid #1E1428' : 'none',
                   }}>
                     <span style={{ color: '#E1BEE7', fontSize: '0.85rem', fontWeight: 500 }}>
-                      {order.profiles?.stall_name ?? '—'}
+                      {order.profiles?.team_username ?? '—'}
                     </span>
                     <span style={{ color: '#CE93D8', fontSize: '0.88rem', fontWeight: 700 }}>
                       ₹{Number(order.price_per_credit).toFixed(0)}

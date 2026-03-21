@@ -9,7 +9,7 @@ import Footer from '@/components/Footer'
 
 export default function BuyPage() {
   const router = useRouter()
-  const [profile, setProfile] = useState<{ stall_name: string; carbon_balance: number | null } | null>(null)
+  const [profile, setProfile] = useState<{ team_username: string; carbon_balance: number | null } | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [tradingActive, setTradingActive] = useState(true)
 
@@ -27,7 +27,7 @@ export default function BuyPage() {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) { router.push('/auth'); return }
-      supabase.from('profiles').select('stall_name, carbon_balance').eq('id', data.user.id).single()
+      supabase.from('profiles').select('team_username, carbon_balance').eq('id', data.user.id).single()
         .then(({ data: p }) => {
           setProfile(p)
           setAuthLoading(false)
@@ -113,7 +113,7 @@ export default function BuyPage() {
                 <strong style={{ color: '#FF5252' }}>Deficit</strong> = you owe credits = buy to offset.
               </div>
             </div>
-            <div style={{ color: '#CE93D8', fontSize: '0.82rem', textAlign: 'right' }}>{profile.stall_name}</div>
+            <div style={{ color: '#CE93D8', fontSize: '0.82rem', textAlign: 'right' }}>{profile.team_username}</div>
           </div>
         )}
 

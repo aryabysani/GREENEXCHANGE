@@ -16,7 +16,7 @@ export async function GET() {
   // Get all profiles
   const { data: profiles } = await admin
     .from('profiles')
-    .select('id, stall_name')
+    .select('id, team_username')
     .order('id')
 
   // Get usernames from auth
@@ -32,7 +32,7 @@ export async function GET() {
     .map(p => ({
       id: p.id,
       username: emailMap[p.id] ?? p.id.slice(0, 8),
-      stall_name: p.stall_name,
+      team_username: p.team_username,
     }))
     .sort((a, b) => a.username.localeCompare(b.username))
 

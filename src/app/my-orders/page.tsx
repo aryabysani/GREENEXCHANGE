@@ -64,7 +64,7 @@ export default function MyOrdersPage() {
   const [buyTrades, setBuyTrades] = useState<BuyTrade[]>([])
   const [sellTrades, setSellTrades] = useState<SellTrade[]>([])
   const [loading, setLoading] = useState(true)
-  const [profile, setProfile] = useState<{ stall_name: string; carbon_balance: number | null } | null>(null)
+  const [profile, setProfile] = useState<{ team_username: string; carbon_balance: number | null } | null>(null)
   const [actionId, setActionId] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
 
@@ -82,7 +82,7 @@ export default function MyOrdersPage() {
         { data: buyTradeData },
         { data: sellTradeData },
       ] = await Promise.all([
-        supabase.from('profiles').select('stall_name, carbon_balance').eq('id', uid).single(),
+        supabase.from('profiles').select('team_username, carbon_balance').eq('id', uid).single(),
         supabase.from('buy_orders').select('*').eq('buyer_id', uid).order('created_at', { ascending: false }),
         supabase.from('listings').select('*').eq('seller_id', uid).in('status', ['live']).order('created_at', { ascending: false }),
         supabase.from('transactions').select('id, credits_amount, price_per_credit, total_price, created_at, seller_id').eq('buyer_id', uid).order('created_at', { ascending: false }),
@@ -100,8 +100,8 @@ export default function MyOrdersPage() {
       ]))
       let stallMap: Record<string, string> = {}
       if (allIds.length > 0) {
-        const { data: profiles } = await supabase.from('profiles').select('id, stall_name').in('id', allIds)
-        for (const p of profiles ?? []) stallMap[p.id] = p.stall_name
+        const { data: profiles } = await supabase.from('profiles').select('id, team_username').in('id', allIds)
+        for (const p of profiles ?? []) stallMap[p.id] = p.team_username
       }
 
       setBuyTrades((buyTradeData ?? []).map(t => ({ ...t, sellerStall: stallMap[t.seller_id] ?? '—' })))
@@ -157,7 +157,7 @@ export default function MyOrdersPage() {
       <div style={{ maxWidth: 960, margin: '32px auto', padding: '0 24px 64px', width: '100%' }}>
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '2rem', color: '#fff', margin: '0 0 4px' }}>My Orders</h1>
-          <p style={{ color: '#6B7280', margin: 0 }}>{profile?.stall_name}</p>
+          <p style={{ color: '#6B7280', margin: 0 }}>{profile?.team_username}</p>
         </div>
 
         {/* Stats */}

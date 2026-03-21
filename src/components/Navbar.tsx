@@ -20,7 +20,7 @@ export default function Navbar() {
       if (data.user) {
         supabase
           .from('profiles')
-          .select('stall_name, carbon_balance')
+          .select('team_username, carbon_balance')
           .eq('id', data.user.id)
           .single()
           .then(({ data: p }) => setProfile(p))
@@ -114,7 +114,7 @@ export default function Navbar() {
                     cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700,
                   }}
                 >
-                  {profile?.stall_name?.[0] ?? '?'}
+                  {profile?.team_username?.[0] ?? '?'}
                 </button>
                 {menuOpen && (
                   <div style={{
@@ -206,8 +206,8 @@ export default function Navbar() {
                   background: '#1A3C2B', color: '#fff', borderRadius: '50%',
                   width: 36, height: 36, display: 'flex', alignItems: 'center',
                   justifyContent: 'center', fontWeight: 700, fontSize: '1rem', flexShrink: 0,
-                }}>{profile.stall_name?.[0] ?? '?'}</div>
-                <span style={{ color: '#1A3C2B', fontWeight: 600, fontSize: '0.95rem' }}>{profile.stall_name || 'Account'}</span>
+                }}>{profile.team_username?.[0] ?? '?'}</div>
+                <span style={{ color: '#1A3C2B', fontWeight: 600, fontSize: '0.95rem' }}>{profile.team_username || 'Account'}</span>
               </div>
               <span style={{
                 background: profile.carbon_balance != null && profile.carbon_balance < 0 ? '#FFEBEE' : '#E8F5E9',

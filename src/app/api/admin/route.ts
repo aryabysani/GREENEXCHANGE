@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .order('stall_name')
+      .order('team_username')
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers({ perPage: 1000 })
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
   if (action === 'get-listings') {
     const { data, error } = await supabase
       .from('listings')
-      .select('*, profiles(stall_name)')
+      .select('*, profiles(team_username)')
       .order('created_at', { ascending: false })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ data })
@@ -111,7 +111,7 @@ export async function POST(request: Request) {
     const { error: profileErr } = await supabase
       .from('profiles')
       .update({
-        stall_name: 'Stall (Reset)',
+        team_username: '',
         carbon_balance: null,
         is_banned: false,
       })
@@ -217,7 +217,7 @@ export async function POST(request: Request) {
   if (action === 'get-buy-orders') {
     const { data, error } = await supabase
       .from('buy_orders')
-      .select('*, profiles(stall_name)')
+      .select('*, profiles(team_username)')
       .order('created_at', { ascending: false })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
