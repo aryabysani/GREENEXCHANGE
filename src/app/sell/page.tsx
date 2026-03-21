@@ -93,7 +93,7 @@ export default function SellPage() {
         )}
 
         <div style={{ marginBottom: 28 }} className="fade-in-up">
-          <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '2rem', color: '#1A3C2B', margin: '0 0 6px' }}>
+          <h1 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '2rem', color: '#1A3C2B', margin: '0 0 6px' }}>
             Place Sell Order ♻️
           </h1>
           <p style={{ color: '#6B7280', margin: 0 }}>

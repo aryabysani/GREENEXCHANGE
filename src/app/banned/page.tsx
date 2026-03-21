@@ -31,7 +31,7 @@ export default function BannedPage() {
         <div style={{ fontSize: 64, marginBottom: 16 }}>🚫</div>
 
         <h1 style={{
-          fontFamily: 'Syne, sans-serif',
+          fontFamily: 'Outfit, sans-serif',
           fontWeight: 800,
           fontSize: '1.8rem',
           color: '#C62828',

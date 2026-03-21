@@ -67,7 +67,7 @@ export default function ProfilePage() {
         </Link>
 
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '2rem', color: '#1A3C2B', margin: '0 0 4px' }}>
+          <h1 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '2rem', color: '#1A3C2B', margin: '0 0 4px' }}>
             Your Profile 🌱
           </h1>
         </div>

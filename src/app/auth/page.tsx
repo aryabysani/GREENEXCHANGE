@@ -80,7 +80,7 @@ export default function AuthPage() {
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div className="float-anim" style={{ fontSize: 72, marginBottom: 16 }}>♻️</div>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '2.2rem', color: '#fff', letterSpacing: '-0.03em' }}>
+          <div style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '2.2rem', color: '#fff', letterSpacing: '-0.03em' }}>
             Green<span style={{ color: '#4CAF50' }}>Credits</span>
           </div>
           <p style={{ color: '#A8D5B5', marginTop: 8, fontSize: '1rem' }}>

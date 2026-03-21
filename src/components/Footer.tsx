@@ -18,7 +18,7 @@ export default function Footer() {
           <div>
             <div style={{ marginBottom: 8 }}>
               <span style={{ fontSize: 20 }}>♻️</span>{' '}
-              <span style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '1.2rem', color: '#fff' }}>
+              <span style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '1.2rem', color: '#fff' }}>
                 Green<span style={{ color: '#4CAF50' }}>Credits</span>
               </span>
             </div>

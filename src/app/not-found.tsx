@@ -17,7 +17,7 @@ export default function NotFound() {
 
         {/* Big 404 */}
         <div style={{
-          fontFamily: 'Syne, sans-serif',
+          fontFamily: 'Outfit, sans-serif',
           fontWeight: 900,
           fontSize: 'clamp(6rem, 20vw, 10rem)',
           color: '#4CAF50',
@@ -34,7 +34,7 @@ export default function NotFound() {
         </div>
 
         <h1 style={{
-          fontFamily: 'Syne, sans-serif',
+          fontFamily: 'Outfit, sans-serif',
           fontWeight: 800,
           fontSize: 'clamp(1.4rem, 4vw, 2rem)',
           color: '#fff',
@@ -105,7 +105,7 @@ export default function NotFound() {
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-10px); }

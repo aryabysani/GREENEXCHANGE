@@ -156,7 +156,7 @@ export default function MyOrdersPage() {
 
       <div style={{ maxWidth: 960, margin: '32px auto', padding: '0 24px 64px', width: '100%' }}>
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '2rem', color: '#fff', margin: '0 0 4px' }}>My Orders</h1>
+          <h1 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '2rem', color: '#fff', margin: '0 0 4px' }}>My Orders</h1>
           <p style={{ color: '#6B7280', margin: 0 }}>{profile?.team_username}</p>
         </div>
 

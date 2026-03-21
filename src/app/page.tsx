@@ -164,7 +164,7 @@ export default function HomePage() {
 
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24 }}>
             <div style={{ maxWidth: 600 }}>
-              <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 900, fontSize: 'clamp(2rem, 5vw, 3.2rem)', color: '#fff', margin: '0 0 6px', lineHeight: 1.05, letterSpacing: '-0.03em' }}>
+              <h1 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 900, fontSize: 'clamp(2rem, 5vw, 3.2rem)', color: '#fff', margin: '0 0 6px', lineHeight: 1.05, letterSpacing: '-0.03em' }}>
                 Green<span style={{ color: '#4CAF50' }}>Credits</span><br />
                 <span style={{ color: '#A8D5B5', fontWeight: 700, fontSize: '0.55em', letterSpacing: '-0.01em' }}>Carbon Exchange — EcoXchange 2025</span>
               </h1>
@@ -194,15 +194,15 @@ export default function HomePage() {
             {/* Live stats */}
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(76,175,80,0.2)', borderRadius: 14, padding: '14px 20px', minWidth: 110, textAlign: 'center' }}>
-                <div style={{ color: '#4CAF50', fontWeight: 800, fontSize: '1.6rem', fontFamily: 'Syne, sans-serif' }}>{totalSellCredits}</div>
+                <div style={{ color: '#4CAF50', fontWeight: 800, fontSize: '1.6rem', fontFamily: 'Outfit, sans-serif' }}>{totalSellCredits}</div>
                 <div style={{ color: '#6B9E7E', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>Credits for sale</div>
               </div>
               <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(123,31,162,0.2)', borderRadius: 14, padding: '14px 20px', minWidth: 110, textAlign: 'center' }}>
-                <div style={{ color: '#CE93D8', fontWeight: 800, fontSize: '1.6rem', fontFamily: 'Syne, sans-serif' }}>{totalBuyCredits}</div>
+                <div style={{ color: '#CE93D8', fontWeight: 800, fontSize: '1.6rem', fontFamily: 'Outfit, sans-serif' }}>{totalBuyCredits}</div>
                 <div style={{ color: '#9E6BA8', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>Credits wanted</div>
               </div>
               <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '14px 20px', minWidth: 110, textAlign: 'center' }}>
-                <div style={{ color: '#fff', fontWeight: 800, fontSize: '1.6rem', fontFamily: 'Syne, sans-serif' }}>{trades.length}</div>
+                <div style={{ color: '#fff', fontWeight: 800, fontSize: '1.6rem', fontFamily: 'Outfit, sans-serif' }}>{trades.length}</div>
                 <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>Recent trades</div>
               </div>
             </div>
@@ -214,7 +214,7 @@ export default function HomePage() {
       {tradingActive === false && (
         <div style={{ background: '#1A0A0A', border: '1px solid #FF5252', margin: '20px 24px', borderRadius: 14, padding: '24px', textAlign: 'center', maxWidth: 1100, marginLeft: 'auto', marginRight: 'auto' }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>⏸️</div>
-          <div style={{ fontWeight: 800, color: '#FF5252', fontSize: '1.3rem', fontFamily: 'Syne, sans-serif' }}>Trading is currently paused</div>
+          <div style={{ fontWeight: 800, color: '#FF5252', fontSize: '1.3rem', fontFamily: 'Outfit, sans-serif' }}>Trading is currently paused</div>
           <p style={{ color: '#9E9E9E', margin: '8px 0 0' }}>The admin will open trading when it&apos;s time. Sit tight — the market opens soon.</p>
         </div>
       )}

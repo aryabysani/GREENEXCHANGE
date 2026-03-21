@@ -120,7 +120,7 @@ export default function AdminPage() {
         }}>
           <div style={{ textAlign: 'center', marginBottom: 28 }}>
             <div style={{ fontSize: 40, marginBottom: 8 }}>🛡️</div>
-            <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '1.6rem', color: '#1A3C2B', margin: 0 }}>
+            <h1 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '1.6rem', color: '#1A3C2B', margin: 0 }}>
               Admin Panel
             </h1>
             <p style={{ color: '#6B7280', margin: '6px 0 0', fontSize: '0.85rem' }}>GreenCredits · Restricted Access</p>
@@ -172,7 +172,7 @@ export default function AdminPage() {
       <div className="admin-header" style={{ background: '#1A3C2B', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 22 }}>🛡️</span>
-          <span style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '1.3rem', color: '#fff' }}>
+          <span style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '1.3rem', color: '#fff' }}>
             Green<span style={{ color: '#4CAF50' }}>Credits</span> Admin
           </span>
         </div>
