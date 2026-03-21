@@ -169,24 +169,27 @@ export async function POST(request: Request) {
       .eq('key', 'trading_active')
       .single()
     const newValue = current?.value === 'true' ? 'false' : 'true'
-    // Try update first (row should exist from migration seed)
-    const { error: updateErr } = await supabase
+    // Update and get the updated row back — if data is null, row didn't exist
+    const { data: updated, error: updateErr } = await supabase
       .from('system_settings')
       .update({ value: newValue })
       .eq('key', 'trading_active')
-    if (updateErr) {
+      .select('value')
+      .single()
+    if (updateErr || !updated) {
       // Row missing — insert it
       const { error: insertErr } = await supabase
         .from('system_settings')
         .insert({ key: 'trading_active', value: newValue })
-      if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 })
+      if (insertErr) return NextResponse.json({ error: `Insert failed: ${insertErr.message}` }, { status: 500 })
     }
-    // Read back to confirm
-    const { data: confirmed } = await supabase
+    // Read back to confirm what's actually in DB
+    const { data: confirmed, error: readErr } = await supabase
       .from('system_settings')
       .select('value')
       .eq('key', 'trading_active')
       .single()
+    if (readErr) return NextResponse.json({ error: `Read failed: ${readErr.message}` }, { status: 500 })
     return NextResponse.json({ active: confirmed?.value === 'true' })
   }
 
