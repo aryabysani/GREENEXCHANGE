@@ -33,8 +33,11 @@ export default function BuyPage() {
           setAuthLoading(false)
         })
     })
-    // Check trading status
-    fetch(`/api/trading-status?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(d => setTradingActive(d.active !== false))
+    const checkTrading = () =>
+      fetch(`/api/trading-status?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(d => setTradingActive(d.active !== false))
+    checkTrading()
+    const interval = setInterval(checkTrading, 10000)
+    return () => clearInterval(interval)
   }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {

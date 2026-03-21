@@ -68,8 +68,11 @@ export default function HomePage() {
       }
     })
 
-    // Trading status
-    fetch(`/api/trading-status?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(d => setTradingActive(d.active === true))
+    // Trading status — poll every 10s so toggle is reflected without refresh
+    const checkTrading = () =>
+      fetch(`/api/trading-status?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(d => setTradingActive(d.active === true))
+    checkTrading()
+    const tradingInterval = setInterval(checkTrading, 10000)
 
     const fetchSellOrders = async () => {
       const { data } = await supabase.from('listings').select('*').eq('status', 'live').eq('is_hidden', false).order('price_per_credit', { ascending: true })
@@ -122,7 +125,7 @@ export default function HomePage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => { fetchTrades(); fetchSellOrders(); fetchBuyOrders() })
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => { supabase.removeChannel(channel); clearInterval(tradingInterval) }
   }, [])
 
   const availableSell = sellOrders.map(s => ({ ...s, available: s.credits_amount - (s.filled_quantity ?? 0) })).filter(s => s.available > 0)

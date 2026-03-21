@@ -32,7 +32,11 @@ export default function SellPage() {
       supabase.from('profiles').select('team_username, carbon_balance').eq('id', data.user.id).single()
         .then(({ data: p }) => { setProfile(p); setAuthLoading(false) })
     })
-    fetch(`/api/trading-status?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(d => setTradingActive(d.active !== false))
+    const checkTrading = () =>
+      fetch(`/api/trading-status?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(d => setTradingActive(d.active !== false))
+    checkTrading()
+    const interval = setInterval(checkTrading, 10000)
+    return () => clearInterval(interval)
   }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
