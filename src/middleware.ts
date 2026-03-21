@@ -32,6 +32,7 @@ export async function middleware(request: NextRequest) {
     path === '/' ||
     path.startsWith('/how-it-works') ||
     path.startsWith('/listing/') ||
+    path.startsWith('/admin') ||
     path.startsWith('/auth') ||
     path.startsWith('/banned') ||
     path.startsWith('/onboarding') ||
