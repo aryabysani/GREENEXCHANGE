@@ -37,13 +37,6 @@ export default function ListingDetailPage() {
   const [teamMembers, setTeamMembers] = useState<string[]>([])
   const [actionLoading, setActionLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [allStalls, setAllStalls] = useState<{ id: string; username: string; stall_name: string | null }[]>([])
-  const [soldModal, setSoldModal] = useState(false)
-  const [selectedBuyer, setSelectedBuyer] = useState('')
-  const [soldLoading, setSoldLoading] = useState(false)
-  const [soldError, setSoldError] = useState('')
-
   useEffect(() => {
     const supabase = createClient()
     Promise.all([
@@ -92,34 +85,6 @@ export default function ListingDetailPage() {
   }, [id])
 
   const isOwner = userId && listing?.seller_id === userId
-
-  const openSoldModal = async () => {
-    setSoldError('')
-    setSelectedBuyer('')
-    if (allStalls.length === 0) {
-      const res = await fetch('/api/stalls')
-      const json = await res.json()
-      setAllStalls(json.data ?? [])
-    }
-    setSoldModal(true)
-  }
-
-  const confirmSold = async () => {
-    if (!selectedBuyer) { setSoldError('Please select a buyer.'); return }
-    setSoldLoading(true)
-    setSoldError('')
-    const res = await fetch('/api/mark-sold', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ listingId: id, buyerId: selectedBuyer }),
-    })
-    const json = await res.json()
-    if (!res.ok) { setSoldError(json.error ?? 'Something went wrong.'); setSoldLoading(false); return }
-    setSoldModal(false)
-    setSuccess('Listing marked as sold! 🎉')
-    setListing(prev => prev ? { ...prev, status: 'sold' } : prev)
-    setSoldLoading(false)
-  }
 
   const handleDelete = async () => {
     if (!confirm('Delete this listing? Credits will be refunded to your balance.')) return
@@ -196,56 +161,6 @@ export default function ListingDetailPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#F0F7F1' }}>
       <Navbar />
-
-      {/* Sold Modal */}
-      {soldModal && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 1000, padding: '0 16px',
-        }}>
-          <div style={{
-            background: '#fff', borderRadius: 20, padding: '32px 28px',
-            maxWidth: 420, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-          }}>
-            <div style={{ fontSize: 36, textAlign: 'center', marginBottom: 8 }}>🤝</div>
-            <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, color: '#1A3C2B', textAlign: 'center', margin: '0 0 4px' }}>
-              Who bought it?
-            </h2>
-            <p style={{ color: '#6B7280', textAlign: 'center', fontSize: '0.88rem', margin: '0 0 20px' }}>
-              Selling <strong>{listing?.credits_amount} credits</strong> — select the buyer and their balance updates automatically.
-            </p>
-            <select
-              value={selectedBuyer}
-              onChange={e => setSelectedBuyer(e.target.value)}
-              style={{
-                width: '100%', padding: '12px 14px', borderRadius: 10,
-                border: '1.5px solid #C8E6C9', fontSize: '0.95rem',
-                background: '#F9FBF9', color: '#1A3C2B', marginBottom: 12,
-                outline: 'none', cursor: 'pointer',
-              }}
-            >
-              <option value="">— Select buyer stall —</option>
-              {allStalls.map(s => (
-                <option key={s.id} value={s.id}>
-                  {s.username}{s.stall_name ? ` — ${s.stall_name}` : ''}
-                </option>
-              ))}
-            </select>
-            {soldError && <div style={{ color: '#C62828', fontSize: '0.85rem', marginBottom: 10, textAlign: 'center' }}>{soldError}</div>}
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setSoldModal(false)} disabled={soldLoading}
-                style={{ flex: 1, padding: '11px', borderRadius: 10, border: '1.5px solid #E0E0E0', background: '#fff', color: '#6B7280', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>
-                Cancel
-              </button>
-              <button onClick={confirmSold} disabled={soldLoading || !selectedBuyer}
-                style={{ flex: 1, padding: '11px', borderRadius: 10, background: selectedBuyer ? '#E65100' : '#ccc', color: '#fff', fontWeight: 700, cursor: selectedBuyer ? 'pointer' : 'not-allowed', border: 'none', fontSize: '0.9rem' }}>
-                {soldLoading ? 'Confirming...' : '✅ Confirm Sale'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="listing-outer" style={{ maxWidth: 720, margin: '32px auto', padding: '0 24px 64px', width: '100%' }}>
         {/* Back */}
@@ -394,12 +309,6 @@ export default function ListingDetailPage() {
                 {error}
               </div>
             )}
-            {success && (
-              <div style={{ background: '#E8F5E9', border: '1px solid #C8E6C9', borderRadius: 10, padding: '10px 14px', marginBottom: 16, color: '#2D6A4F', fontSize: '0.9rem' }}>
-                {success}
-              </div>
-            )}
-
             {/* Owner actions */}
             {isOwner && listing.status === 'live' && (
               <div style={{
@@ -414,18 +323,6 @@ export default function ListingDetailPage() {
                   It&apos;s your listing, captain. Do what you want.
                 </p>
                 <div className="listing-actions" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  <button
-                    onClick={openSoldModal}
-                    disabled={actionLoading}
-                    style={{
-                      background: '#4CAF50', color: '#fff',
-                      border: 'none', borderRadius: 8, padding: '10px 20px',
-                      fontWeight: 600, fontSize: '0.9rem', cursor: actionLoading ? 'not-allowed' : 'pointer',
-                      opacity: actionLoading ? 0.6 : 1,
-                    }}
-                  >
-                    🤝 Mark as Sold
-                  </button>
                   <button
                     onClick={handleDelete}
                     disabled={actionLoading}
