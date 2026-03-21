@@ -201,6 +201,7 @@ export async function POST(request: Request) {
         insertErr: insertErr?.message,
         confirmedInDB: confirmed?.value,
         readErr: readErr?.message,
+        url: process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(0, 40),
       }
     })
   }
