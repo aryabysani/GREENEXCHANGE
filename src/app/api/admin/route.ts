@@ -169,7 +169,7 @@ export async function POST(request: Request) {
       .eq('key', 'trading_active')
       .single()
     const newValue = current?.value === 'true' ? 'false' : 'true'
-    await supabase.from('system_settings').upsert({ key: 'trading_active', value: newValue })
+    await supabase.from('system_settings').upsert({ key: 'trading_active', value: newValue }, { onConflict: 'key' })
     return NextResponse.json({ active: newValue === 'true' })
   }
 
