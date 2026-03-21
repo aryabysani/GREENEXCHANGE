@@ -178,14 +178,27 @@ export default function HomePage() {
                 </span>
               </p>
 
-              {tradingActive && (
+              {userBalance === null ? (
+                <div style={{ marginTop: 24 }}>
+                  <Link href="/auth" style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 10,
+                    background: 'linear-gradient(135deg, #2E7D32, #4CAF50)',
+                    color: '#fff', padding: '14px 32px', borderRadius: 12,
+                    textDecoration: 'none', fontWeight: 800, fontSize: '1rem',
+                    boxShadow: '0 4px 24px rgba(76,175,80,0.35)', letterSpacing: '0.02em',
+                  }}>
+                    🔑 Sign In to Trade
+                  </Link>
+                  <p style={{ color: '#4A7C5E', fontSize: '0.8rem', marginTop: 10 }}>Sign in with your team to access trading</p>
+                </div>
+              ) : tradingActive && (
                 <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
-                  {(userBalance === undefined || userBalance === null || userBalance >= 0) && (
+                  {(userBalance === undefined || userBalance >= 0) && (
                     <Link href="/sell" style={{ background: 'linear-gradient(135deg, #2E7D32, #4CAF50)', color: '#fff', padding: '11px 24px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '0.9rem', boxShadow: '0 4px 16px rgba(76,175,80,0.25)' }}>
                       ♻️ Sell Credits
                     </Link>
                   )}
-                  {(userBalance === undefined || userBalance === null || userBalance < 0) && (
+                  {(userBalance === undefined || userBalance < 0) && (
                     <Link href="/buy" style={{ background: 'linear-gradient(135deg, #4A148C, #7B1FA2)', color: '#fff', padding: '11px 24px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '0.9rem', boxShadow: '0 4px 16px rgba(123,31,162,0.25)' }}>
                       📈 Buy Credits
                     </Link>
@@ -355,11 +368,13 @@ export default function HomePage() {
         </div>
 
         {/* Quick links */}
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 20, flexWrap: 'wrap' }}>
-          <Link href="/my-orders" style={{ color: '#4A7C5E', fontSize: '0.85rem', textDecoration: 'none' }}>
-            My Orders →
-          </Link>
-        </div>
+        {userBalance !== null && (
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 20, flexWrap: 'wrap' }}>
+            <Link href="/my-orders" style={{ color: '#4A7C5E', fontSize: '0.85rem', textDecoration: 'none' }}>
+              My Orders →
+            </Link>
+          </div>
+        )}
       </div>
 
       <style>{`
