@@ -94,13 +94,24 @@ export default function HomePage() {
       .order('price_per_credit', { ascending: false })
       .then(({ data }) => setBuyOrders(data ?? []))
 
-    // Recent trades
+    // Recent trades + stall name map
     supabase
       .from('transactions')
       .select('id, credits_amount, price_per_credit, total_price, created_at, seller_id, buyer_id')
       .order('created_at', { ascending: false })
       .limit(15)
-      .then(({ data }) => setTrades(data ?? []))
+      .then(({ data }) => {
+        setTrades(data ?? [])
+        const ids = Array.from(new Set((data ?? []).flatMap(t => [t.seller_id, t.buyer_id])))
+        if (ids.length > 0) {
+          supabase.from('profiles').select('id, stall_name').in('id', ids)
+            .then(({ data: profiles }) => {
+              const map: Record<string, string> = {}
+              for (const p of profiles ?? []) map[p.id] = p.stall_name
+              setUsernameMap(map)
+            })
+        }
+      })
 
     setLoading(false)
   }, [])
@@ -331,8 +342,8 @@ export default function HomePage() {
 
         {/* Quick links */}
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 20, flexWrap: 'wrap' }}>
-          <Link href="/my-listings" style={{ color: '#4A7C5E', fontSize: '0.85rem', textDecoration: 'none' }}>
-            {userBalance != null && userBalance < 0 ? 'My Buy Orders →' : 'My Orders →'}
+          <Link href="/my-orders" style={{ color: '#4A7C5E', fontSize: '0.85rem', textDecoration: 'none' }}>
+            My Orders →
           </Link>
         </div>
       </div>

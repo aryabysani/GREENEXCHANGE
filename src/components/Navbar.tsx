@@ -125,7 +125,7 @@ export default function Navbar() {
                     zIndex: 200, overflow: 'hidden',
                   }}>
                     {[
-                      { href: '/my-listings', label: profile?.carbon_balance != null && profile.carbon_balance < 0 ? 'My Buy Orders' : 'My Listings' },
+                      { href: '/my-orders', label: 'My Orders' },
                       { href: '/profile', label: 'Profile' },
                     ].map(item => (
                       <Link key={item.href} href={item.href}
@@ -239,7 +239,7 @@ export default function Navbar() {
               { href: '/how-it-works', label: 'How It Works' },
               { href: '/about', label: 'About' },
               ...(user ? [
-                { href: '/my-listings', label: profile?.carbon_balance != null && profile.carbon_balance < 0 ? 'My Buy Orders' : 'My Listings' },
+                { href: '/my-orders', label: 'My Orders' },
                 { href: '/profile', label: 'Profile' },
               ] : []),
             ].map(({ href, label }, i, arr) => (

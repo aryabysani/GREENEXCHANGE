@@ -16,7 +16,6 @@ export default function SellPage() {
 
   const [creditsAmount, setCreditsAmount] = useState('')
   const [pricePerCredit, setPricePerCredit] = useState('')
-  const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [matchResult, setMatchResult] = useState<{ matched: number; total: number } | null>(null)
@@ -49,7 +48,7 @@ export default function SellPage() {
     const res = await fetch('/api/place-sell-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ quantity: credits, pricePerCredit: price, description }),
+      body: JSON.stringify({ quantity: credits, pricePerCredit: price }),
     })
     const json = await res.json()
     if (!res.ok) { setError(json.error ?? 'Something went wrong.'); setLoading(false); return }
@@ -57,7 +56,6 @@ export default function SellPage() {
     setMatchResult({ matched: json.matched ?? 0, total: credits })
     setCreditsAmount('')
     setPricePerCredit('')
-    setDescription('')
     setLoading(false)
     // Refresh profile balance
     if (userId) {
@@ -203,20 +201,6 @@ export default function SellPage() {
                 </div>
               </div>
             )}
-
-            <div>
-              <label style={{ display: 'block', marginBottom: 6, fontSize: '0.875rem', fontWeight: 600, color: '#1A3C2B' }}>
-                Description <span style={{ color: '#9E9E9E', fontWeight: 400 }}>(optional)</span>
-              </label>
-              <textarea
-                value={description} onChange={e => setDescription(e.target.value)}
-                placeholder="Any info you want to share — e.g. 'We switched to solar. Now we have carbssss to spare.'"
-                rows={3} disabled={!tradingActive}
-                style={{ width: '100%', padding: '12px 14px', border: '1.5px solid #C8E6C9', borderRadius: 10, fontSize: '0.9rem', background: tradingActive ? '#fff' : '#f5f5f5', color: '#1A3C2B', outline: 'none', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'Space Grotesk, sans-serif' }}
-                onFocus={e => (e.target.style.borderColor = '#4CAF50')}
-                onBlur={e => (e.target.style.borderColor = '#C8E6C9')}
-              />
-            </div>
 
             <div style={{ background: '#F0F7F1', border: '1px solid #C8E6C9', borderRadius: 10, padding: '12px 16px', fontSize: '0.82rem', color: '#2D6A4F', lineHeight: 1.6 }}>
               💡 <strong>How matching works:</strong> Your order is instantly matched with the highest existing buy bids. Unmatched quantity stays live in the order book until a buyer appears.
