@@ -1,10 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function makeClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 async function revokeUserSessions(userId: string) {
   // Revoke all refresh tokens for this user so they are kicked out immediately
@@ -21,6 +23,7 @@ async function revokeUserSessions(userId: string) {
 }
 
 export async function POST(request: Request) {
+  const supabase = makeClient()
   const { secret, action, id } = await request.json()
 
   if (secret !== process.env.ADMIN_SECRET) {
