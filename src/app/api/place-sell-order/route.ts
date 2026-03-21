@@ -78,21 +78,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Trading is currently paused. Check back during trading hours.' }, { status: 403 })
   }
 
-  const { quantity, pricePerCredit, description } = await request.json()
+  const { quantity, pricePerCredit } = await request.json()
   if (!quantity || quantity <= 0) return NextResponse.json({ error: 'Invalid quantity' }, { status: 400 })
   if (!pricePerCredit || pricePerCredit <= 0) return NextResponse.json({ error: 'Invalid price' }, { status: 400 })
 
-  const { data: profile } = await admin.from('profiles').select('carbon_balance, whatsapp_number').eq('id', user.id).single()
+  const { data: profile } = await admin.from('profiles').select('carbon_balance').eq('id', user.id).single()
   if (profile?.carbon_balance == null) return NextResponse.json({ error: 'Your carbon balance has not been set by admin yet.' }, { status: 400 })
   if (profile.carbon_balance < quantity) return NextResponse.json({ error: `You only have ${profile.carbon_balance} credits available.` }, { status: 400 })
-  if (!profile.whatsapp_number) return NextResponse.json({ error: 'Add your WhatsApp number in Profile first.' }, { status: 400 })
 
   const { data: listing, error: insertError } = await admin.from('listings').insert({
     seller_id: user.id,
     credits_amount: quantity,
     price_per_credit: pricePerCredit,
     total_price: quantity * pricePerCredit,
-    description: description?.trim() || null,
     status: 'live',
     filled_quantity: 0,
   }).select().single()

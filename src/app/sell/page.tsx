@@ -10,7 +10,7 @@ import Footer from '@/components/Footer'
 export default function SellPage() {
   const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
-  const [profile, setProfile] = useState<{ stall_name: string; carbon_balance: number | null; whatsapp_number: string | null } | null>(null)
+  const [profile, setProfile] = useState<{ stall_name: string; carbon_balance: number | null } | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [tradingActive, setTradingActive] = useState(true)
 
@@ -29,7 +29,7 @@ export default function SellPage() {
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) { router.push('/auth'); return }
       setUserId(data.user.id)
-      supabase.from('profiles').select('stall_name, carbon_balance, whatsapp_number').eq('id', data.user.id).single()
+      supabase.from('profiles').select('stall_name, carbon_balance').eq('id', data.user.id).single()
         .then(({ data: p }) => { setProfile(p); setAuthLoading(false) })
     })
     fetch(`/api/trading-status?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(d => setTradingActive(d.active !== false))
@@ -121,19 +121,12 @@ export default function SellPage() {
               </div>
             </div>
             <div style={{ color: '#A8D5B5', fontSize: '0.82rem', textAlign: 'right' }}>
-              {profile.stall_name}<br /><span style={{ opacity: 0.7 }}>Max you can list</span>
+              {profile.stall_name}
             </div>
           </div>
         )}
 
-        {!profile?.whatsapp_number && (
-          <div style={{ background: '#FFF3E0', border: '1px solid #FFE082', borderRadius: 12, padding: '12px 16px', marginBottom: 20, fontSize: '0.87rem', color: '#E65100' }}>
-            ⚠️ Add your WhatsApp number first so buyers can reach you.{' '}
-            <Link href="/profile" style={{ color: '#4CAF50', fontWeight: 600 }}>Update profile →</Link>
-          </div>
-        )}
-
-        {matchResult && (
+{matchResult && (
           <div style={{ background: '#E8F5E9', border: '1.5px solid #4CAF50', borderRadius: 14, padding: '16px 20px', marginBottom: 20 }}>
             <div style={{ fontWeight: 700, color: '#1A3C2B', fontSize: '1rem', marginBottom: 4 }}>✅ Sell order placed!</div>
             {matchResult.matched > 0 ? (
@@ -146,7 +139,7 @@ export default function SellPage() {
                 Your sell order for <strong>{matchResult.total} credits</strong> is live in the order book — you&apos;ll match automatically when a buyer bids at your price or higher.
               </p>
             )}
-            <Link href="/my-listings" style={{ color: '#4CAF50', fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none' }}>View My Orders →</Link>
+            <Link href="/my-orders" style={{ color: '#4CAF50', fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none' }}>View My Orders →</Link>
           </div>
         )}
 
@@ -208,12 +201,12 @@ export default function SellPage() {
 
             <button
               type="submit"
-              disabled={loading || !tradingActive || !profile?.whatsapp_number}
+              disabled={loading || !tradingActive}
               style={{
-                background: (loading || !tradingActive || !profile?.whatsapp_number) ? '#A8D5B5' : '#4CAF50',
+                background: (loading || !tradingActive) ? '#A8D5B5' : '#4CAF50',
                 color: '#fff', border: 'none', borderRadius: 12, padding: '14px',
                 fontSize: '1rem', fontWeight: 700,
-                cursor: (loading || !tradingActive || !profile?.whatsapp_number) ? 'not-allowed' : 'pointer',
+                cursor: (loading || !tradingActive) ? 'not-allowed' : 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}
             >

@@ -207,7 +207,7 @@ export default function Navbar() {
                   width: 36, height: 36, display: 'flex', alignItems: 'center',
                   justifyContent: 'center', fontWeight: 700, fontSize: '1rem', flexShrink: 0,
                 }}>{profile.stall_name?.[0] ?? '?'}</div>
-                <span style={{ color: '#1A3C2B', fontWeight: 600, fontSize: '0.95rem' }}>{profile.stall_name}</span>
+                <span style={{ color: '#1A3C2B', fontWeight: 600, fontSize: '0.95rem' }}>{profile.stall_name || 'Account'}</span>
               </div>
               <span style={{
                 background: profile.carbon_balance != null && profile.carbon_balance < 0 ? '#FFEBEE' : '#E8F5E9',

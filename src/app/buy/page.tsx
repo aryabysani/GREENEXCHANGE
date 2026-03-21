@@ -113,7 +113,7 @@ export default function BuyPage() {
                 <strong style={{ color: '#FF5252' }}>Deficit</strong> = you owe credits = buy to offset.
               </div>
             </div>
-            <div style={{ color: '#CE93D8', fontSize: '0.82rem', textAlign: 'right' }}>{profile.stall_name}<br /><span style={{ opacity: 0.7 }}>Buying team</span></div>
+            <div style={{ color: '#CE93D8', fontSize: '0.82rem', textAlign: 'right' }}>{profile.stall_name}</div>
           </div>
         )}
 
