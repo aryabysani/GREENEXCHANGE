@@ -186,6 +186,29 @@ export default function HowItWorksPage() {
           </div>
         </div>
 
+        {/* Settlement */}
+        <div style={{ background: '#1A1200', border: '1px solid #FFB74D40', borderRadius: 16, padding: '28px 32px', marginBottom: 32 }}>
+          <h2 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '1.3rem', color: '#FFB74D', margin: '0 0 14px' }}>
+            💸 Offline Settlement
+          </h2>
+          <p style={{ color: '#D4A847', fontSize: '0.95rem', lineHeight: 1.75, margin: '0 0 16px' }}>
+            The platform records every trade automatically — but <strong style={{ color: '#FFD54F' }}>actual payment happens offline, in person</strong>, after all rounds of trading are done.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[
+              { icon: '📋', text: 'After trading closes, visit My Orders to see your full settlement summary.' },
+              { icon: '💰', text: 'Buyers: You owe each seller the total amount shown for credits purchased from them. Pay them directly.' },
+              { icon: '🤝', text: 'Sellers: You are owed by each buyer who matched with your listings. Collect from them in person.' },
+              { icon: '✅', text: 'The platform shows exactly who owes who and how much — use it as your receipt.' },
+            ].map(item => (
+              <div key={item.text} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: 'rgba(255,183,77,0.05)', border: '1px solid rgba(255,183,77,0.12)', borderRadius: 10, padding: '12px 14px' }}>
+                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
+                <span style={{ color: '#9CA3AF', fontSize: '0.88rem', lineHeight: 1.65 }}>{item.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Key rules */}
         <div style={{ background: '#161B22', border: '1px solid #1E3A2F', borderRadius: 16, padding: '24px 28px', marginBottom: 40 }}>
           <h3 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, color: '#fff', marginBottom: 16, fontSize: '1.1rem' }}>

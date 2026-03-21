@@ -18,9 +18,11 @@ async function matchSellOrder(listingId: string, sellerId: string, totalQty: num
     .order('created_at', { ascending: true })
 
   let remainingQty = totalQty
+  const cancelledBuyers = new Set<string>()
 
   for (const bo of buyOrders ?? []) {
     if (remainingQty <= 0) break
+    if (cancelledBuyers.has(bo.buyer_id)) continue
     const available = bo.quantity - bo.filled_quantity
     if (available <= 0) continue
     const fillQty = Math.min(remainingQty, available)
@@ -47,6 +49,7 @@ async function matchSellOrder(listingId: string, sellerId: string, totalQty: num
     // Auto-cancel buyer's remaining open buy orders if balance is now non-negative
     if (newBuyerBalance >= 0) {
       await admin.from('buy_orders').update({ status: 'cancelled' }).eq('buyer_id', bo.buyer_id).in('status', ['open', 'partial'])
+      cancelledBuyers.add(bo.buyer_id)
     }
 
     remainingQty -= fillQty

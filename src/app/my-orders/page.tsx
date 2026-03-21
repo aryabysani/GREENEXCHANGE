@@ -148,6 +148,24 @@ export default function MyOrdersPage() {
   const totalSpent = buyTrades.reduce((s, t) => s + Number(t.total_price), 0)
   const totalEarned = sellTrades.reduce((s, t) => s + Number(t.total_price), 0)
 
+  // Group buy trades by seller for settlement summary
+  const owedBySeller: Record<string, { name: string; amount: number; credits: number }> = {}
+  for (const t of buyTrades) {
+    const key = t.seller_id
+    if (!owedBySeller[key]) owedBySeller[key] = { name: t.sellerStall ?? '—', amount: 0, credits: 0 }
+    owedBySeller[key].amount += Number(t.total_price)
+    owedBySeller[key].credits += Number(t.credits_amount)
+  }
+
+  // Group sell trades by buyer for settlement summary
+  const owedByBuyer: Record<string, { name: string; amount: number; credits: number }> = {}
+  for (const t of sellTrades) {
+    const key = t.buyer_id
+    if (!owedByBuyer[key]) owedByBuyer[key] = { name: t.buyerStall ?? '—', amount: 0, credits: 0 }
+    owedByBuyer[key].amount += Number(t.total_price)
+    owedByBuyer[key].credits += Number(t.credits_amount)
+  }
+
   const cell = { color: '#6B7280', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.06em' }
 
   return (
@@ -179,6 +197,45 @@ export default function MyOrdersPage() {
             </div>
           </div>
         </div>
+
+        {/* Settlement Summary */}
+        {(Object.keys(owedBySeller).length > 0 || Object.keys(owedByBuyer).length > 0) && (
+          <div style={{ background: '#1A1200', border: '1px solid #FFB74D40', borderRadius: 14, padding: '20px 24px', marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <span style={{ fontSize: 18 }}>💸</span>
+              <span style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, color: '#FFB74D', fontSize: '0.95rem' }}>Offline Settlement Required</span>
+            </div>
+            <p style={{ color: '#9CA3AF', fontSize: '0.83rem', margin: '0 0 14px', lineHeight: 1.6 }}>
+              Trades are recorded on the platform but <strong style={{ color: '#FFD54F' }}>payment must be made in person</strong> after the trading session ends.
+            </p>
+            {Object.keys(owedBySeller).length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ color: '#FF5252', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>You owe (pay these teams)</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {Object.values(owedBySeller).map(s => (
+                    <div key={s.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,82,82,0.06)', border: '1px solid rgba(255,82,82,0.15)', borderRadius: 8, padding: '8px 14px' }}>
+                      <span style={{ color: '#fff', fontWeight: 600, fontSize: '0.88rem' }}>{s.name}</span>
+                      <span style={{ color: '#FF5252', fontWeight: 800 }}>₹{s.amount.toFixed(0)} <span style={{ color: '#6B7280', fontWeight: 400, fontSize: '0.78rem' }}>({s.credits} credits)</span></span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {Object.keys(owedByBuyer).length > 0 && (
+              <div>
+                <div style={{ color: '#4CAF50', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Collect from (they owe you)</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {Object.values(owedByBuyer).map(b => (
+                    <div key={b.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(76,175,80,0.06)', border: '1px solid rgba(76,175,80,0.15)', borderRadius: 8, padding: '8px 14px' }}>
+                      <span style={{ color: '#fff', fontWeight: 600, fontSize: '0.88rem' }}>{b.name}</span>
+                      <span style={{ color: '#4CAF50', fontWeight: 800 }}>₹{b.amount.toFixed(0)} <span style={{ color: '#6B7280', fontWeight: 400, fontSize: '0.78rem' }}>({b.credits} credits)</span></span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: '#161B22', borderRadius: 10, padding: 4, width: 'fit-content' }}>
