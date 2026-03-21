@@ -6,7 +6,8 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   const admin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { global: { fetch: (url, opts) => fetch(url, { ...opts, cache: 'no-store' }) } }
   )
   const { data: single, error } = await admin.from('system_settings').select('value').eq('key', 'trading_active').single()
   const { data: all } = await admin.from('system_settings').select('*')
