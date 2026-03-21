@@ -115,24 +115,32 @@ export default function MyOrdersPage() {
   const cancelBuyOrder = async (orderId: string) => {
     if (!confirm('Cancel this buy order?')) return
     setActionId(orderId)
-    const supabase = createClient()
-    await supabase.from('buy_orders').update({ status: 'cancelled' }).eq('id', orderId).eq('buyer_id', userId!)
-    setBuyOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'cancelled' } : o))
+    const res = await fetch('/api/cancel-buy-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId }),
+    })
+    if (res.ok) {
+      setBuyOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'cancelled' } : o))
+    }
     setActionId(null)
   }
 
-  const cancelSellOrder = async (listingId: string, creditsAmount: number, filledQty: number) => {
+  const cancelSellOrder = async (listingId: string) => {
     if (!confirm('Cancel this sell order? Unfilled credits will be refunded to your balance.')) return
     setActionId(listingId)
-    const supabase = createClient()
-    const unfilledCredits = creditsAmount - filledQty
-    await supabase.from('listings').update({ status: 'removed' }).eq('id', listingId).eq('seller_id', userId!)
-    if (unfilledCredits > 0 && profile) {
-      const newBalance = (profile.carbon_balance ?? 0) + unfilledCredits
-      await supabase.from('profiles').update({ carbon_balance: newBalance }).eq('id', userId!)
-      setProfile(prev => prev ? { ...prev, carbon_balance: newBalance } : prev)
+    const res = await fetch('/api/cancel-sell-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listingId }),
+    })
+    if (res.ok) {
+      const json = await res.json()
+      setSellOrders(prev => prev.filter(o => o.id !== listingId))
+      if (json.unfilledCredits > 0) {
+        setProfile(prev => prev ? { ...prev, carbon_balance: (prev.carbon_balance ?? 0) + json.unfilledCredits } : prev)
+      }
     }
-    setSellOrders(prev => prev.filter(o => o.id !== listingId))
     setActionId(null)
   }
 
@@ -342,7 +350,7 @@ export default function MyOrdersPage() {
                       <span style={{ color: '#6B7280', fontSize: '0.8rem' }}>{timeAgo(o.created_at)}</span>
                       <div>
                         <button
-                          onClick={() => cancelSellOrder(o.id, o.credits_amount, o.filled_quantity ?? 0)}
+                          onClick={() => cancelSellOrder(o.id)}
                           disabled={actionId === o.id}
                           style={{ background: '#2A0A0A', color: '#FF5252', border: '1px solid #FF525240', borderRadius: 6, padding: '4px 10px', fontSize: '0.75rem', fontWeight: 600, cursor: actionId === o.id ? 'not-allowed' : 'pointer', opacity: actionId === o.id ? 0.5 : 1 }}
                         >Cancel</button>

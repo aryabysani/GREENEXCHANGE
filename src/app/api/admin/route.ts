@@ -111,7 +111,6 @@ export async function POST(request: Request) {
     const { error: profileErr } = await supabase
       .from('profiles')
       .update({
-        team_username: '',
         carbon_balance: null,
         is_banned: false,
       })
@@ -167,7 +166,7 @@ export async function POST(request: Request) {
 
   // ── toggle-trading ─────────────────────────────────────────────
   if (action === 'toggle-trading') {
-    const { data: current, error: readCurrentErr } = await supabase
+    const { data: current } = await supabase
       .from('system_settings')
       .select('value')
       .eq('key', 'trading_active')
@@ -179,32 +178,17 @@ export async function POST(request: Request) {
       .eq('key', 'trading_active')
       .select('value')
       .single()
-    let insertErr = null
     if (updateErr || !updated) {
-      const { error: ie } = await supabase
+      await supabase
         .from('system_settings')
         .insert({ key: 'trading_active', value: newValue })
-      insertErr = ie
     }
-    const { data: confirmed, error: readErr } = await supabase
+    const { data: confirmed } = await supabase
       .from('system_settings')
       .select('value')
       .eq('key', 'trading_active')
       .single()
-    return NextResponse.json({
-      active: confirmed?.value === 'true',
-      _debug: {
-        currentInDB: current?.value,
-        readCurrentErr: readCurrentErr?.message,
-        attempted: newValue,
-        updateErr: updateErr?.message,
-        updatedRow: updated?.value,
-        insertErr: insertErr?.message,
-        confirmedInDB: confirmed?.value,
-        readErr: readErr?.message,
-        url: process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(0, 40),
-      }
-    })
+    return NextResponse.json({ active: confirmed?.value === 'true' })
   }
 
   // ── get-trading-status ─────────────────────────────────────────

@@ -35,6 +35,10 @@ export async function middleware(request: NextRequest) {
     path.startsWith('/api') ||
     path.startsWith('/_next')
 
+  if (!user && !isPublicPath) {
+    return NextResponse.redirect(new URL('/auth', request.url))
+  }
+
   if (user && !isPublicPath) {
     const { data: profile } = await supabase
       .from('profiles')

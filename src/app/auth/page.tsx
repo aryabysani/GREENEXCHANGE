@@ -33,7 +33,6 @@ export default function AuthPage() {
         if (profile?.is_banned) {
           await supabase.auth.signOut()
           setError('BANNED')
-          setLoading(false)
           return
         }
         router.push('/')
@@ -84,7 +83,7 @@ export default function AuthPage() {
             Green<span style={{ color: '#4CAF50' }}>Credits</span>
           </div>
           <p style={{ color: '#A8D5B5', marginTop: 8, fontSize: '1rem' }}>
-            Sell your carbssss ♻️
+            Trade carbon credits ♻️
           </p>
         </div>
 
