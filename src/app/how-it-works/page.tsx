@@ -123,7 +123,7 @@ export default function HowItWorksPage() {
                   <span style={{ fontSize: 20 }}>{step.emoji}</span>
                   <span style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: '1rem', color: '#fff' }}>{step.title}</span>
                 </div>
-                <p style={{ color: '#8B9467', fontSize: '0.9rem', lineHeight: 1.7, margin: 0, color: '#9CA3AF' }}>{step.desc}</p>
+                <p style={{ fontSize: '0.9rem', lineHeight: 1.7, margin: 0, color: '#9CA3AF' }}>{step.desc}</p>
               </div>
             </div>
           ))}
@@ -141,7 +141,7 @@ export default function HowItWorksPage() {
               { label: 'No matching order exists', result: 'Your order stays live in the order book. It fills automatically the moment a matching order appears — even if you\'ve closed the tab.', color: '#FFB74D' },
               { label: 'Partial fill', result: 'If only some of your quantity matches, the filled portion executes immediately. The rest stays open as a partial order.', color: '#6B9E7E' },
             ].map(item => (
-              <div key={item.label} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, background: 'rgba(255,255,255,0.02)', borderRadius: 10, padding: '14px 16px' }}>
+              <div key={item.label} className="hiw-match-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, background: 'rgba(255,255,255,0.02)', borderRadius: 10, padding: '14px 16px' }}>
                 <div style={{ color: item.color, fontWeight: 600, fontSize: '0.87rem' }}>→ {item.label}</div>
                 <div style={{ color: '#9CA3AF', fontSize: '0.85rem', lineHeight: 1.6 }}>{item.result}</div>
               </div>
@@ -242,6 +242,11 @@ export default function HowItWorksPage() {
         </div>
       </div>
 
+      <style>{`
+        @media (max-width: 640px) {
+          .hiw-match-row { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
       <Footer />
     </div>
   )

@@ -31,7 +31,7 @@ export default function Footer() {
             {[
               { href: '/', label: 'Marketplace' },
               { href: '/sell', label: 'Sell Credits' },
-              { href: '/my-listings', label: 'My Listings' },
+              { href: '/my-orders', label: 'My Orders' },
             ].map(l => (
               <Link key={l.href} href={l.href} style={{ display: 'block', color: '#A8D5B5', textDecoration: 'none', fontSize: '0.85rem', marginBottom: 6 }}>
                 {l.label}
@@ -41,7 +41,6 @@ export default function Footer() {
           <div>
             <div style={{ fontWeight: 600, color: '#fff', marginBottom: 12, fontSize: '0.9rem' }}>Info</div>
             {[
-              { href: '/about', label: 'About' },
               { href: '/how-it-works', label: 'How It Works' },
             ].map(l => (
               <Link key={l.href} href={l.href} style={{ display: 'block', color: '#A8D5B5', textDecoration: 'none', fontSize: '0.85rem', marginBottom: 6 }}>

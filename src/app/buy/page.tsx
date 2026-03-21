@@ -77,7 +77,7 @@ export default function BuyPage() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#F0F7F1' }}>
       <Navbar />
 
-      <div style={{ maxWidth: 600, margin: '32px auto', padding: '0 24px 64px', width: '100%' }}>
+      <div className="buy-container" style={{ maxWidth: 600, margin: '32px auto', padding: '0 24px 64px', width: '100%' }}>
         <Link href="/" style={{ color: '#4CAF50', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 4, marginBottom: 20 }}>
           ← Back to Order Book
         </Link>
@@ -208,7 +208,7 @@ export default function BuyPage() {
 
       <style>{`
         @media (max-width: 640px) {
-          div[style*="maxWidth: 600"] { padding: 0 16px 48px !important; margin-top: 20px !important; }
+          .buy-container { padding: 0 16px 48px !important; margin-top: 20px !important; }
         }
       `}</style>
       <Footer />

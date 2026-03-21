@@ -10,6 +10,7 @@ import Footer from '@/components/Footer'
 type Listing = {
   id: string
   credits_amount: number
+  filled_quantity: number | null
   price_per_credit: number
   total_price: number
   status: string
@@ -96,14 +97,17 @@ export default function ListingDetailPage() {
 
     await supabase.from('listings').update({ status: 'removed' }).eq('id', id)
 
-    // Refund credits back to seller
+    // Refund only unfilled credits back to seller
     if (listing) {
-      const { data: profile } = await supabase.from('profiles').select('carbon_balance').eq('id', user.id).single()
-      const currentBalance = profile?.carbon_balance ?? 0
-      await supabase.from('profiles').update({ carbon_balance: currentBalance + listing.credits_amount }).eq('id', user.id)
+      const unfilledCredits = listing.credits_amount - (listing.filled_quantity ?? 0)
+      if (unfilledCredits > 0) {
+        const { data: profile } = await supabase.from('profiles').select('carbon_balance').eq('id', user.id).single()
+        const currentBalance = profile?.carbon_balance ?? 0
+        await supabase.from('profiles').update({ carbon_balance: currentBalance + unfilledCredits }).eq('id', user.id)
+      }
     }
 
-    router.push('/my-listings')
+    router.push('/my-orders')
     setActionLoading(false)
   }
 

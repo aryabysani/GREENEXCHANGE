@@ -64,7 +64,7 @@ export default function SellPage() {
     // Refresh profile balance
     if (userId) {
       const supabase = createClient()
-      supabase.from('profiles').select('team_username, carbon_balance, whatsapp_number').eq('id', userId).single()
+      supabase.from('profiles').select('team_username, carbon_balance').eq('id', userId).single()
         .then(({ data: p }) => setProfile(p))
     }
   }

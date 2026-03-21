@@ -269,11 +269,12 @@ export default function MyOrdersPage() {
                 </div>
               ) : (
                 <div style={{ background: '#161B22', border: '1px solid #2A1A3E', borderRadius: 14, overflow: 'hidden' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 1fr 1fr 1fr 80px', padding: '10px 20px', borderBottom: '1px solid #2A1A3E' }}>
+                  <div style={{ overflowX: 'auto' }}>
+                  <div style={{ minWidth: 520, display: 'grid', gridTemplateColumns: '100px 1fr 1fr 1fr 1fr 80px', padding: '10px 20px', borderBottom: '1px solid #2A1A3E' }}>
                     {['Status', 'Qty', 'Filled', 'Bid Price', 'Placed', ''].map(h => <span key={h} style={cell}>{h}</span>)}
                   </div>
                   {buyOrders.map((o, i) => (
-                    <div key={o.id} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 1fr 1fr 1fr 80px', padding: '13px 20px', borderBottom: i < buyOrders.length - 1 ? '1px solid #1A1A2E' : 'none', alignItems: 'center' }}>
+                    <div key={o.id} style={{ minWidth: 520, display: 'grid', gridTemplateColumns: '100px 1fr 1fr 1fr 1fr 80px', padding: '13px 20px', borderBottom: i < buyOrders.length - 1 ? '1px solid #1A1A2E' : 'none', alignItems: 'center' }}>
                       <span style={{ background: BO_BG[o.status] ?? '#F5F5F5', color: BO_COLOR[o.status] ?? '#9E9E9E', borderRadius: 6, padding: '2px 8px', fontSize: '0.7rem', fontWeight: 700, width: 'fit-content' }}>
                         {o.status.toUpperCase()}
                       </span>
@@ -292,6 +293,7 @@ export default function MyOrdersPage() {
                       </div>
                     </div>
                   ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -303,11 +305,12 @@ export default function MyOrdersPage() {
                 <div style={{ background: '#161B22', border: '1px solid #2A1A3E', borderRadius: 14, padding: '24px', textAlign: 'center', color: '#6B7280', fontSize: '0.9rem' }}>No trades yet.</div>
               ) : (
                 <div style={{ background: '#161B22', border: '1px solid #2A1A3E', borderRadius: 14, overflow: 'hidden' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', padding: '10px 20px', borderBottom: '1px solid #2A1A3E' }}>
+                  <div style={{ overflowX: 'auto' }}>
+                  <div style={{ minWidth: 440, display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', padding: '10px 20px', borderBottom: '1px solid #2A1A3E' }}>
                     {['Seller', 'Qty', 'Price Paid', 'Total', 'When'].map(h => <span key={h} style={cell}>{h}</span>)}
                   </div>
                   {buyTrades.map((t, i) => (
-                    <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', padding: '13px 20px', borderBottom: i < buyTrades.length - 1 ? '1px solid #1A1A2E' : 'none', alignItems: 'center' }}>
+                    <div key={t.id} style={{ minWidth: 440, display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', padding: '13px 20px', borderBottom: i < buyTrades.length - 1 ? '1px solid #1A1A2E' : 'none', alignItems: 'center' }}>
                       <span style={{ color: '#4CAF50', fontWeight: 600, fontSize: '0.88rem' }}>{t.sellerStall}</span>
                       <span style={{ color: '#E1BEE7' }}>{t.credits_amount}</span>
                       <span style={{ color: '#CE93D8', fontWeight: 700 }}>₹{Number(t.price_per_credit).toFixed(0)}</span>
@@ -315,6 +318,7 @@ export default function MyOrdersPage() {
                       <span style={{ color: '#6B7280', fontSize: '0.8rem' }}>{timeAgo(t.created_at)}</span>
                     </div>
                   ))}
+                  </div>
                   <div style={{ padding: '10px 20px', borderTop: '1px solid #2A1A3E', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                     <span style={{ color: '#6B7280', fontSize: '0.85rem' }}>Total spent:</span>
                     <span style={{ color: '#CE93D8', fontWeight: 800 }}>₹{totalSpent.toFixed(0)}</span>
@@ -338,11 +342,12 @@ export default function MyOrdersPage() {
                 </div>
               ) : (
                 <div style={{ background: '#161B22', border: '1px solid #1E3A2F', borderRadius: 14, overflow: 'hidden' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 80px', padding: '10px 20px', borderBottom: '1px solid #1E3A2F' }}>
+                  <div style={{ overflowX: 'auto' }}>
+                  <div style={{ minWidth: 480, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 80px', padding: '10px 20px', borderBottom: '1px solid #1E3A2F' }}>
                     {['Credits', 'Filled', 'Ask Price', 'Total Value', 'Posted', ''].map(h => <span key={h} style={cell}>{h}</span>)}
                   </div>
                   {sellOrders.map((o, i) => (
-                    <div key={o.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 80px', padding: '13px 20px', borderBottom: i < sellOrders.length - 1 ? '1px solid #1A2320' : 'none', alignItems: 'center' }}>
+                    <div key={o.id} style={{ minWidth: 480, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 80px', padding: '13px 20px', borderBottom: i < sellOrders.length - 1 ? '1px solid #1A2320' : 'none', alignItems: 'center' }}>
                       <span style={{ color: '#C8E6C9', fontWeight: 600 }}>{o.credits_amount}</span>
                       <span style={{ color: '#4CAF50' }}>{o.filled_quantity ?? 0}</span>
                       <span style={{ color: '#4CAF50', fontWeight: 700 }}>₹{Number(o.price_per_credit).toFixed(0)}</span>
@@ -357,6 +362,7 @@ export default function MyOrdersPage() {
                       </div>
                     </div>
                   ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -371,11 +377,12 @@ export default function MyOrdersPage() {
                 </div>
               ) : (
                 <div style={{ background: '#161B22', border: '1px solid #1E3A2F', borderRadius: 14, overflow: 'hidden' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', padding: '10px 20px', borderBottom: '1px solid #1E3A2F' }}>
+                  <div style={{ overflowX: 'auto' }}>
+                  <div style={{ minWidth: 440, display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', padding: '10px 20px', borderBottom: '1px solid #1E3A2F' }}>
                     {['Buyer', 'Credits', 'Price/Credit', 'Total', 'When'].map(h => <span key={h} style={cell}>{h}</span>)}
                   </div>
                   {sellTrades.map((t, i) => (
-                    <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', padding: '13px 20px', borderBottom: i < sellTrades.length - 1 ? '1px solid #1A2320' : 'none', alignItems: 'center' }}>
+                    <div key={t.id} style={{ minWidth: 440, display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', padding: '13px 20px', borderBottom: i < sellTrades.length - 1 ? '1px solid #1A2320' : 'none', alignItems: 'center' }}>
                       <span style={{ color: '#CE93D8', fontWeight: 600, fontSize: '0.88rem' }}>{t.buyerStall}</span>
                       <span style={{ color: '#C8E6C9' }}>{t.credits_amount}</span>
                       <span style={{ color: '#4CAF50', fontWeight: 700 }}>₹{Number(t.price_per_credit).toFixed(0)}</span>
@@ -383,6 +390,7 @@ export default function MyOrdersPage() {
                       <span style={{ color: '#6B7280', fontSize: '0.8rem' }}>{timeAgo(t.created_at)}</span>
                     </div>
                   ))}
+                  </div>
                   <div style={{ padding: '10px 20px', borderTop: '1px solid #1E3A2F', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                     <span style={{ color: '#6B7280', fontSize: '0.85rem' }}>Total earned:</span>
                     <span style={{ color: '#4CAF50', fontWeight: 800 }}>₹{totalEarned.toFixed(0)}</span>

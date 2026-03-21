@@ -31,6 +31,7 @@ export async function middleware(request: NextRequest) {
   const isPublicPath =
     path === '/' ||
     path.startsWith('/how-it-works') ||
+    path.startsWith('/listing/') ||
     path.startsWith('/auth') ||
     path.startsWith('/banned') ||
     path.startsWith('/onboarding') ||
