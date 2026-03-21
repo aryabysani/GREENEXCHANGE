@@ -11,7 +11,6 @@ export default function ProfilePage() {
   const router = useRouter()
   const [profile, setProfile] = useState<{
     stall_name: string
-    whatsapp_number: string | null
     carbon_balance: number
     team_members: string[]
   } | null>(null)
@@ -23,7 +22,6 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState('')
 
   const [stallName, setStallName] = useState('')
-  const [whatsapp, setWhatsapp] = useState('')
 
   useEffect(() => {
     const supabase = createClient()
@@ -32,13 +30,12 @@ export default function ProfilePage() {
       setEmail(data.user.email ?? '')
       supabase
         .from('profiles')
-        .select('stall_name, whatsapp_number, carbon_balance, team_members')
+        .select('stall_name, carbon_balance, team_members')
         .eq('id', data.user.id)
         .single()
         .then(({ data: p }) => {
           setProfile(p)
           setStallName(p?.stall_name ?? '')
-          setWhatsapp(p?.whatsapp_number ?? '')
           setLoading(false)
         })
     })
@@ -48,11 +45,6 @@ export default function ProfilePage() {
     e.preventDefault()
     setError('')
     setSuccess('')
-    const digits = whatsapp.replace(/\D/g, '')
-    if (whatsapp && digits.length !== 10) {
-      setError('Enter a valid 10-digit mobile number.')
-      return
-    }
     setSaving(true)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -62,14 +54,13 @@ export default function ProfilePage() {
       .from('profiles')
       .update({
         stall_name: stallName.trim(),
-        whatsapp_number: whatsapp.trim() || null,
       })
       .eq('id', user.id)
 
     if (err) setError(err.message)
     else {
       setSuccess('Profile updated! Looking good. ♻️')
-      setProfile(prev => prev ? { ...prev, stall_name: stallName.trim(), whatsapp_number: whatsapp.trim() || null } : prev)
+      setProfile(prev => prev ? { ...prev, stall_name: stallName.trim() } : prev)
     }
     setSaving(false)
   }
@@ -231,36 +222,6 @@ export default function ProfilePage() {
                 onFocus={e => (e.target.style.borderColor = '#4CAF50')}
                 onBlur={e => (e.target.style.borderColor = '#C8E6C9')}
               />
-            </div>
-
-            {/* WhatsApp */}
-            <div>
-              <label style={{ display: 'block', marginBottom: 6, fontSize: '0.875rem', fontWeight: 600, color: '#1A3C2B' }}>
-                WhatsApp Number *
-              </label>
-              <div style={{ position: 'relative' }}>
-                <span style={{
-                  position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-                  color: '#6B7280', fontSize: '0.9rem',
-                }}>📱</span>
-                <input
-                  type="tel"
-                  value={whatsapp}
-                  onChange={e => setWhatsapp(e.target.value)}
-                  placeholder="+91 98765 43210"
-                  style={{
-                    width: '100%', padding: '12px 14px 12px 36px',
-                    border: '1.5px solid #C8E6C9', borderRadius: 10,
-                    fontSize: '0.95rem', background: '#fff', color: '#1A3C2B',
-                    outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s',
-                  }}
-                  onFocus={e => (e.target.style.borderColor = '#4CAF50')}
-                  onBlur={e => (e.target.style.borderColor = '#C8E6C9')}
-                />
-              </div>
-              <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#9E9E9E' }}>
-                Buyers use this to contact you. Without it, you can&apos;t list credits.
-              </p>
             </div>
 
             <button

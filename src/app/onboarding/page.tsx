@@ -12,7 +12,6 @@ export default function OnboardingPage() {
   const [error, setError] = useState('')
 
   const [stallName, setStallName] = useState('')
-  const [phone, setPhone] = useState('')
 
   useEffect(() => {
     const supabase = createClient()
@@ -28,8 +27,6 @@ export default function OnboardingPage() {
     setError('')
 
     if (!stallName.trim()) { setError('Stall name is required.'); return }
-    const digits = phone.replace(/\D/g, '')
-    if (digits.length !== 10) { setError('Enter a valid 10-digit mobile number.'); return }
 
     setSaving(true)
     const supabase = createClient()
@@ -37,7 +34,6 @@ export default function OnboardingPage() {
       .from('profiles')
       .update({
         stall_name: stallName.trim(),
-        whatsapp_number: `+91${phone.replace(/\D/g, '')}`,
       })
       .eq('id', userId)
 
@@ -103,7 +99,6 @@ export default function OnboardingPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', maxWidth: 260 }}>
           {[
             { icon: '🏪', label: 'Tell us your stall name' },
-            { icon: '📱', label: 'Add your WhatsApp for buyers' },
             { icon: '💸', label: 'Start trading carbon credits' },
           ].map((item) => (
             <div key={item.label} style={{
@@ -175,37 +170,6 @@ export default function OnboardingPage() {
                 onFocus={e => (e.target.style.borderColor = '#4CAF50')}
                 onBlur={e => (e.target.style.borderColor = '#C8E6C9')}
               />
-            </div>
-
-            {/* Phone number */}
-            <div>
-              <label style={{ display: 'block', marginBottom: 6, fontSize: '0.875rem', fontWeight: 600, color: '#1A3C2B' }}>
-                📱 WhatsApp Number *
-              </label>
-              <div style={{ position: 'relative' }}>
-                <span style={{
-                  position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-                  color: '#6B7280', fontSize: '0.9rem',
-                }}>+91</span>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  placeholder="98765 43210"
-                  required
-                  style={{
-                    width: '100%', padding: '12px 14px 12px 44px',
-                    border: '1.5px solid #C8E6C9', borderRadius: 10,
-                    fontSize: '0.95rem', background: '#fff', color: '#1A3C2B',
-                    outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s',
-                  }}
-                  onFocus={e => (e.target.style.borderColor = '#4CAF50')}
-                  onBlur={e => (e.target.style.borderColor = '#C8E6C9')}
-                />
-              </div>
-              <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#9E9E9E' }}>
-                Buyers will reach out on this number when they want your credits.
-              </p>
             </div>
 
             <button

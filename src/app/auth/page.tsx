@@ -27,7 +27,7 @@ export default function AuthPage() {
         // Check if profile is set up
         const { data: profile } = await supabase
           .from('profiles')
-          .select('whatsapp_number, is_banned')
+          .select('is_banned')
           .eq('id', data.user!.id)
           .single()
         if (profile?.is_banned) {
@@ -36,11 +36,7 @@ export default function AuthPage() {
           setLoading(false)
           return
         }
-        if (!profile?.whatsapp_number) {
-          router.push('/onboarding')
-        } else {
-          router.push('/')
-        }
+        router.push('/')
         router.refresh()
       }
     } catch {
@@ -97,7 +93,7 @@ export default function AuthPage() {
           {[
             { icon: '🌱', label: 'Track your carbon balance' },
             { icon: '💱', label: 'Trade surplus credits' },
-            { icon: '📱', label: 'Connect via WhatsApp' },
+            { icon: '🤝', label: 'Trade with other stalls' },
           ].map((item) => (
             <div key={item.label} style={{
               background: 'rgba(255,255,255,0.08)',

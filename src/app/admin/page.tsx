@@ -10,7 +10,6 @@ type Profile = {
   id: string
   username: string
   stall_name: string
-  whatsapp_number: string | null
   carbon_balance: number
   is_banned: boolean
 }
@@ -47,15 +46,25 @@ export default function AdminPage() {
   const [dataLoading, setDataLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [msg, setMsg] = useState('')
+  const [tradingActive, setTradingActive] = useState(false)
+  const [tradingLoading, setTradingLoading] = useState(false)
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
       setAuthed(true)
       loadData('profiles')
+      call('get-trading-status').then(d => setTradingActive(d.active === true))
     } else {
       setLoginError('Wrong credentials. Nice try though. 😐')
     }
+  }
+
+  const handleToggleTrading = async () => {
+    setTradingLoading(true)
+    const { active, error } = await call('toggle-trading')
+    if (error) { setMsg(`❌ ${error}`); } else { setTradingActive(active); setMsg(`✅ Trading is now ${active ? 'OPEN' : 'PAUSED'}`) }
+    setTradingLoading(false)
   }
 
   const call = async (action: string, id?: string) => {
@@ -167,12 +176,27 @@ export default function AdminPage() {
             Green<span style={{ color: '#4CAF50' }}>Credits</span> Admin
           </span>
         </div>
-        <button
-          onClick={() => setAuthed(false)}
-          style={{ background: 'rgba(255,255,255,0.1)', color: '#A8D5B5', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: '0.85rem' }}
-        >
-          Logout
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            onClick={handleToggleTrading}
+            disabled={tradingLoading}
+            style={{
+              background: tradingActive ? '#FF5252' : '#4CAF50',
+              color: '#fff', border: 'none', borderRadius: 8,
+              padding: '8px 16px', cursor: 'pointer', fontWeight: 700, fontSize: '0.88rem',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}
+          >
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff', display: 'inline-block' }} />
+            {tradingLoading ? '...' : tradingActive ? 'Pause Trading' : 'Open Trading'}
+          </button>
+          <button
+            onClick={() => setAuthed(false)}
+            style={{ background: 'rgba(255,255,255,0.1)', color: '#A8D5B5', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: '0.85rem' }}
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
       <div className="admin-body" style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 24px' }}>
@@ -226,7 +250,7 @@ export default function AdminPage() {
               <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.87rem' }}>
                 <thead>
                   <tr style={{ background: '#F0F7F1' }}>
-                    {['Username', 'Stall Name', 'WhatsApp', 'Balance', 'Status', 'Actions'].map(h => (
+                    {['Username', 'Stall Name', 'Balance', 'Status', 'Actions'].map(h => (
                       <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#6B7280', fontWeight: 600, fontSize: '0.78rem', textTransform: 'uppercase' }}>{h}</th>
                     ))}
                   </tr>
@@ -236,7 +260,6 @@ export default function AdminPage() {
                     <tr key={p.id} style={{ borderTop: '1px solid #E8F5E9', background: p.is_banned ? '#FFF3F3' : i % 2 === 0 ? '#fff' : '#FAFFFE' }}>
                       <td style={{ padding: '12px 16px', color: '#6B7280', fontFamily: 'monospace', fontSize: '0.85rem' }}>{p.username}</td>
                       <td style={{ padding: '12px 16px', fontWeight: 600, color: '#1A3C2B' }}>{p.stall_name}</td>
-                      <td style={{ padding: '12px 16px', color: '#6B7280', fontFamily: 'monospace' }}>{p.whatsapp_number ?? '—'}</td>
                       <td style={{ padding: '12px 16px' }}>
                         <span style={{ background: '#E8F5E9', color: '#2D6A4F', borderRadius: 6, padding: '2px 8px', fontWeight: 700 }}>
                           ♻️ {p.carbon_balance}

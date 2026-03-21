@@ -96,11 +96,15 @@ export default function Navbar() {
                   <span>{profile.carbon_balance != null ? `${profile.carbon_balance} credits` : 'Contact admin'}</span>
                 </div>
               )}
-              <Link href="/sell" style={{
-                background: '#4CAF50', color: '#fff',
-                padding: '8px 18px', borderRadius: 20,
-                textDecoration: 'none', fontSize: '0.9rem', fontWeight: 600,
-              }}>+ Sell Credits</Link>
+              {profile?.carbon_balance != null && profile.carbon_balance < 0 ? (
+                <Link href="/buy" style={{ background: '#7B1FA2', color: '#fff', padding: '8px 18px', borderRadius: 20, textDecoration: 'none', fontSize: '0.9rem', fontWeight: 600 }}>
+                  📈 Buy Credits
+                </Link>
+              ) : (
+                <Link href="/sell" style={{ background: '#4CAF50', color: '#fff', padding: '8px 18px', borderRadius: 20, textDecoration: 'none', fontSize: '0.9rem', fontWeight: 600 }}>
+                  + Sell Credits
+                </Link>
+              )}
               <div style={{ position: 'relative' }}>
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
@@ -215,14 +219,17 @@ export default function Navbar() {
             </div>
           )}
 
-          {/* Sell CTA */}
+          {/* Buy/Sell CTA */}
           {user && (
-            <Link href="/sell" onClick={() => setMobileOpen(false)} style={{
-              display: 'block', background: '#4CAF50', color: '#fff',
-              padding: '14px 20px', borderRadius: 12,
-              textDecoration: 'none', fontSize: '1rem', fontWeight: 700,
-              textAlign: 'center',
-            }}>+ Sell Credits</Link>
+            profile?.carbon_balance != null && profile.carbon_balance < 0 ? (
+              <Link href="/buy" onClick={() => setMobileOpen(false)} style={{ display: 'block', background: '#7B1FA2', color: '#fff', padding: '14px 20px', borderRadius: 12, textDecoration: 'none', fontSize: '1rem', fontWeight: 700, textAlign: 'center' }}>
+                📈 Buy Credits
+              </Link>
+            ) : (
+              <Link href="/sell" onClick={() => setMobileOpen(false)} style={{ display: 'block', background: '#4CAF50', color: '#fff', padding: '14px 20px', borderRadius: 12, textDecoration: 'none', fontSize: '1rem', fontWeight: 700, textAlign: 'center' }}>
+                + Sell Credits
+              </Link>
+            )
           )}
 
           {/* Nav links */}

@@ -38,17 +38,12 @@ export async function middleware(request: NextRequest) {
   if (user && !isPublicPath) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('is_banned, whatsapp_number')
+      .select('is_banned')
       .eq('id', user.id)
       .single()
 
     if (profile?.is_banned) {
       return NextResponse.redirect(new URL('/banned', request.url))
-    }
-
-    // After reset, whatsapp_number becomes null → send to onboarding
-    if (!profile?.whatsapp_number) {
-      return NextResponse.redirect(new URL('/onboarding', request.url))
     }
   }
 

@@ -12,13 +12,11 @@ type Listing = {
   credits_amount: number
   price_per_credit: number
   total_price: number
-  description: string | null
   status: string
   created_at: string
   seller_id: string
   profiles: {
     stall_name: string
-    whatsapp_number: string | null
   } | null
 }
 
@@ -51,7 +49,7 @@ export default function ListingDetailPage() {
     Promise.all([
       supabase
         .from('listings')
-        .select('*, profiles(stall_name, whatsapp_number)')
+        .select('*, profiles(stall_name)')
         .eq('id', id)
         .single(),
       supabase.auth.getUser(),
@@ -69,7 +67,7 @@ export default function ListingDetailPage() {
         if (listingOnly) {
           const { data: profileData } = await supabase
             .from('profiles')
-            .select('stall_name, whatsapp_number')
+            .select('stall_name')
             .eq('id', listingOnly.seller_id)
             .single()
           finalListing = { ...listingOnly, profiles: profileData ?? null }
@@ -143,12 +141,6 @@ export default function ListingDetailPage() {
     router.push('/my-listings')
     setActionLoading(false)
   }
-
-  const whatsappLink = listing?.profiles?.whatsapp_number
-    ? `https://wa.me/${listing.profiles.whatsapp_number.replace(/\D/g, '')}?text=${encodeURIComponent(
-        `Hi ${listing.profiles.stall_name}, I'm interested in buying ${listing.credits_amount} carbon credits listed on GreenCredits!`
-      )}`
-    : null
 
   const statusColor: Record<string, string> = {
     live: '#4CAF50',
@@ -327,19 +319,6 @@ export default function ListingDetailPage() {
               ))}
             </div>
 
-            {/* Description */}
-            {listing.description && (
-              <div style={{
-                background: '#F0F7F1',
-                borderRadius: 10,
-                padding: '14px 16px',
-                marginBottom: 24,
-              }}>
-                <div style={{ fontSize: '0.78rem', color: '#6B7280', marginBottom: 4, fontWeight: 600 }}>DESCRIPTION</div>
-                <p style={{ margin: 0, color: '#1A3C2B', lineHeight: 1.6 }}>{listing.description}</p>
-              </div>
-            )}
-
             {/* Posted time */}
             <div style={{ fontSize: '0.82rem', color: '#9E9E9E', marginBottom: 24 }}>
               📅 Posted {timeAgo(listing.created_at)} · {new Date(listing.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -418,111 +397,6 @@ export default function ListingDetailPage() {
             {success && (
               <div style={{ background: '#E8F5E9', border: '1px solid #C8E6C9', borderRadius: 10, padding: '10px 14px', marginBottom: 16, color: '#2D6A4F', fontSize: '0.9rem' }}>
                 {success}
-              </div>
-            )}
-
-            {/* WhatsApp contact section */}
-            {listing.status === 'live' && !isOwner && (
-              <div style={{
-                background: '#F0F7F1',
-                border: '1.5px solid #C8E6C9',
-                borderRadius: 14,
-                padding: '20px',
-                marginBottom: 20,
-              }}>
-                <div style={{ fontWeight: 700, color: '#1A3C2B', marginBottom: 6, fontSize: '1rem' }}>
-                  📱 Contact Seller
-                </div>
-                <p style={{ color: '#6B7280', fontSize: '0.87rem', margin: '0 0 14px' }}>
-                  Interested? Slide into their DMs on WhatsApp. No cap.
-                </p>
-
-                {userId ? (
-                  <div>
-                    {listing.profiles?.whatsapp_number ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                        <div style={{
-                          background: '#E8F5E9',
-                          border: '1px solid #C8E6C9',
-                          borderRadius: 8,
-                          padding: '8px 14px',
-                          fontWeight: 600,
-                          color: '#1A3C2B',
-                          fontSize: '1rem',
-                          fontFamily: 'IBM Plex Mono, monospace',
-                        }}>
-                          📞 {listing.profiles.whatsapp_number}
-                        </div>
-                        {whatsappLink && (
-                          <a
-                            href={whatsappLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              background: '#25D366',
-                              color: '#fff',
-                              padding: '10px 20px',
-                              borderRadius: 10,
-                              textDecoration: 'none',
-                              fontWeight: 700,
-                              fontSize: '0.9rem',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 6,
-                            }}
-                          >
-                            💬 Chat on WhatsApp
-                          </a>
-                        )}
-                      </div>
-                    ) : (
-                      <p style={{ color: '#9E9E9E', margin: 0, fontSize: '0.87rem' }}>Seller hasn&apos;t added a WhatsApp number yet.</p>
-                    )}
-                    <div style={{
-                      marginTop: 14, background: '#F0F7F1', border: '1px solid #C8E6C9',
-                      borderRadius: 10, padding: '11px 14px', fontSize: '0.82rem',
-                      color: '#2D6A4F', lineHeight: 1.6,
-                    }}>
-                      💡 <strong>How buying works:</strong> Contact the seller on WhatsApp and agree on the deal. The seller will then mark the listing as sold and select your stall — your carbon credit balance will be updated automatically.
-                    </div>
-                  </div>
-                ) : (
-                  /* Blurred overlay for guests */
-                  <div style={{ position: 'relative' }}>
-                    <div style={{
-                      background: '#E8F5E9',
-                      border: '1px solid #C8E6C9',
-                      borderRadius: 8,
-                      padding: '8px 14px',
-                      fontWeight: 600,
-                      color: '#1A3C2B',
-                      fontSize: '1rem',
-                      filter: 'blur(6px)',
-                      userSelect: 'none',
-                      pointerEvents: 'none',
-                    }}>
-                      📞 +91 98765 43210
-                    </div>
-                    <div style={{
-                      position: 'absolute', inset: 0,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      gap: 10,
-                    }}>
-                      <Link href="/auth" style={{
-                        background: '#1A3C2B',
-                        color: '#fff',
-                        padding: '8px 18px',
-                        borderRadius: 8,
-                        textDecoration: 'none',
-                        fontWeight: 600,
-                        fontSize: '0.85rem',
-                        whiteSpace: 'nowrap',
-                      }}>
-                        🔒 Login to view contact
-                      </Link>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 

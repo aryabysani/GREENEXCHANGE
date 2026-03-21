@@ -6,334 +6,345 @@ import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 
-type Listing = {
+type SellOrder = {
   id: string
   credits_amount: number
+  filled_quantity: number
   price_per_credit: number
-  total_price: number
-  description: string | null
   status: string
   created_at: string
   seller_id: string
   profiles: { stall_name: string } | null
 }
 
-function timeAgo(date: string) {
-  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
-  if (seconds < 60) return 'just now'
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
-  return `${Math.floor(seconds / 86400)}d ago`
+type BuyOrder = {
+  id: string
+  quantity: number
+  filled_quantity: number
+  price_per_credit: number
+  status: string
+  created_at: string
+  buyer_id: string
+  profiles: { stall_name: string } | null
 }
 
-function ListingCard({ listing }: { listing: Listing }) {
-  const stall = listing.profiles?.stall_name ?? 'Unknown Stall'
-  return (
-    <Link href={`/listing/${listing.id}`} style={{ textDecoration: 'none' }}>
-      <div style={{
-        background: '#fff',
-        border: '1.5px solid #C8E6C9',
-        borderRadius: 16,
-        padding: 20,
-        cursor: 'pointer',
-        transition: 'transform 0.18s, box-shadow 0.18s, border-color 0.18s',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-        onMouseEnter={e => {
-          const el = e.currentTarget as HTMLDivElement
-          el.style.transform = 'translateY(-3px)'
-          el.style.boxShadow = '0 8px 30px rgba(26,60,43,0.12)'
-          el.style.borderColor = '#4CAF50'
-        }}
-        onMouseLeave={e => {
-          const el = e.currentTarget as HTMLDivElement
-          el.style.transform = 'translateY(0)'
-          el.style.boxShadow = 'none'
-          el.style.borderColor = '#C8E6C9'
-        }}
-      >
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-          <div style={{
-            background: '#E8F5E9',
-            borderRadius: 8,
-            padding: '4px 10px',
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            color: '#2D6A4F',
-          }}>
-            ♻️ LIVE
-          </div>
-          <span style={{ fontSize: '0.78rem', color: '#9E9E9E' }}>{timeAgo(listing.created_at)}</span>
-        </div>
+type Trade = {
+  id: string
+  credits_amount: number
+  price_per_credit: number
+  total_price: number
+  created_at: string
+  seller_id: string
+  buyer_id: string
+}
 
-        {/* Stall name */}
-        <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#1A3C2B', marginBottom: 4 }}>
-          {stall}
-        </div>
-
-        {/* Credits */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          margin: '12px 0',
-          background: 'linear-gradient(135deg, #1A3C2B, #2D6A4F)',
-          borderRadius: 10,
-          padding: '10px 14px',
-        }}>
-          <span style={{ fontSize: 20 }}>♻️</span>
-          <div>
-            <div style={{ color: '#4CAF50', fontWeight: 800, fontSize: '1.4rem', lineHeight: 1 }}>
-              {listing.credits_amount}
-            </div>
-            <div style={{ color: '#A8D5B5', fontSize: '0.75rem' }}>Carbon Credits</div>
-          </div>
-        </div>
-
-        {/* Price */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <div>
-            <span style={{ fontSize: '0.78rem', color: '#6B7280' }}>per credit</span>
-            <div style={{ fontWeight: 700, color: '#1A3C2B', fontSize: '1.1rem' }}>
-              ₹{Number(listing.price_per_credit).toFixed(0)}
-            </div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <span style={{ fontSize: '0.78rem', color: '#6B7280' }}>total</span>
-            <div style={{ fontWeight: 800, color: '#4CAF50', fontSize: '1.2rem' }}>
-              ₹{Number(listing.total_price).toFixed(0)}
-            </div>
-          </div>
-        </div>
-
-        {listing.description && (
-          <p style={{
-            color: '#6B7280', fontSize: '0.82rem', margin: '8px 0 0',
-            overflow: 'hidden', display: '-webkit-box',
-            WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-            lineHeight: 1.4,
-          }}>
-            {listing.description}
-          </p>
-        )}
-
-        <div style={{ marginTop: 'auto', paddingTop: 12, borderTop: '1px solid #E8F5E9', fontSize: '0.8rem', color: '#4CAF50', fontWeight: 500 }}>
-          View Details →
-        </div>
-      </div>
-    </Link>
-  )
+function timeAgo(date: string) {
+  const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
+  if (s < 60) return 'just now'
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`
+  return `${Math.floor(s / 86400)}d ago`
 }
 
 export default function HomePage() {
-  const [listings, setListings] = useState<Listing[]>([])
-  const [filtered, setFiltered] = useState<Listing[]>([])
-  const [search, setSearch] = useState('')
-  const [sort, setSort] = useState('newest')
+  const [sellOrders, setSellOrders] = useState<SellOrder[]>([])
+  const [buyOrders, setBuyOrders] = useState<BuyOrder[]>([])
+  const [trades, setTrades] = useState<Trade[]>([])
+  const [tradingActive, setTradingActive] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(true)
+  const [userBalance, setUserBalance] = useState<number | null | undefined>(undefined)
+  const [usernameMap, setUsernameMap] = useState<Record<string, string>>({})
 
   useEffect(() => {
     const supabase = createClient()
+
+    // Check user balance for CTA
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        supabase.from('profiles').select('carbon_balance').eq('id', data.user.id).single()
+          .then(({ data: p }) => setUserBalance(p?.carbon_balance ?? null))
+      } else {
+        setUserBalance(null)
+      }
+    })
+
+    // Trading status
+    fetch('/api/trading-status').then(r => r.json()).then(d => setTradingActive(d.active === true))
+
+    // Sell orders (live listings), sorted by price ASC
     supabase
       .from('listings')
       .select('*, profiles(stall_name)')
       .eq('status', 'live')
-      .order('created_at', { ascending: false })
+      .eq('is_hidden', false)
+      .order('price_per_credit', { ascending: true })
       .then(({ data, error }) => {
-        if (error) {
-          console.error('Marketplace query error:', error)
-          // Try without the join as fallback
-          supabase
-            .from('listings')
-            .select('*')
-            .eq('status', 'live')
-            .order('created_at', { ascending: false })
-            .then(({ data: data2 }) => {
-              const visible = (data2 ?? []).filter((l: Record<string, unknown>) => l.is_hidden !== true)
-              setListings(visible)
-              setFiltered(visible)
-              setLoading(false)
-            })
-          return
+        if (!error) setSellOrders(data ?? [])
+        else {
+          supabase.from('listings').select('*').eq('status', 'live').order('price_per_credit', { ascending: true })
+            .then(({ data: d2 }) => setSellOrders((d2 ?? []).filter((l: Record<string, unknown>) => !l.is_hidden)))
         }
-        const visible = (data ?? []).filter((l: Record<string, unknown>) => l.is_hidden !== true)
-        setListings(visible)
-        setFiltered(visible)
-        setLoading(false)
       })
+
+    // Buy orders (open/partial), sorted by price DESC
+    supabase
+      .from('buy_orders')
+      .select('*, profiles(stall_name)')
+      .in('status', ['open', 'partial'])
+      .order('price_per_credit', { ascending: false })
+      .then(({ data }) => setBuyOrders(data ?? []))
+      .catch(() => setBuyOrders([]))
+
+    // Recent trades
+    supabase
+      .from('transactions')
+      .select('id, credits_amount, price_per_credit, total_price, created_at, seller_id, buyer_id')
+      .order('created_at', { ascending: false })
+      .limit(15)
+      .then(({ data }) => setTrades(data ?? []))
+
+    setLoading(false)
   }, [])
 
-  useEffect(() => {
-    let result = [...listings]
+  const availableSell = sellOrders.map(s => ({ ...s, available: s.credits_amount - (s.filled_quantity ?? 0) })).filter(s => s.available > 0)
+  const availableBuy = buyOrders.map(b => ({ ...b, remaining: b.quantity - (b.filled_quantity ?? 0) })).filter(b => b.remaining > 0)
 
-    if (search) {
-      result = result.filter(l =>
-        l.profiles?.stall_name?.toLowerCase().includes(search.toLowerCase())
-      )
-    }
-
-    if (sort === 'price_low') result.sort((a, b) => a.price_per_credit - b.price_per_credit)
-    else if (sort === 'price_high') result.sort((a, b) => b.price_per_credit - a.price_per_credit)
-    else if (sort === 'credits') result.sort((a, b) => b.credits_amount - a.credits_amount)
-    else result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-
-    setFiltered(result)
-  }, [search, sort, listings])
+  const totalSellCredits = availableSell.reduce((s, o) => s + o.available, 0)
+  const totalBuyCredits = availableBuy.reduce((s, o) => s + o.remaining, 0)
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#F0F7F1' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#0D1117' }}>
       <Navbar />
 
       {/* Hero */}
-      <div className="hero-padding" style={{
-        background: 'linear-gradient(135deg, #1A3C2B 0%, #2D6A4F 100%)',
-        padding: '48px 24px',
-        textAlign: 'center',
+      <div style={{
+        background: 'linear-gradient(135deg, #0D2818 0%, #1A3C2B 50%, #0D2818 100%)',
+        padding: '40px 24px 32px',
+        borderBottom: '1px solid #1E3A2F',
       }}>
-        <div style={{ maxWidth: 700, margin: '0 auto' }} className="fade-in-up">
-          <div style={{ fontSize: 48, marginBottom: 12 }}>♻️</div>
-          <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '2rem', color: '#fff', letterSpacing: '-0.03em', marginBottom: 4 }}>
-            Green<span style={{ color: '#4CAF50' }}>Credits</span>
-          </div>
-          <h1 style={{ fontSize: 'clamp(1.5rem, 3.5vw, 2.4rem)', fontWeight: 800, color: '#fff', margin: '0 0 12px', fontFamily: 'Syne, sans-serif' }}>
-            Sell your carbssss ♻️
-          </h1>
-          <p style={{ color: '#A8D5B5', fontSize: '1.05rem', margin: '0 0 24px' }}>
-            Sitting on carbon credits like it's a flex?<br />
-            Time to trade those surplus credits. Turn good eco-behavior into cold hard rupees. 💸
-            <br /><br />
-            <span style={{ fontSize: '0.88rem', color: '#C8E6C9' }}>
-              <strong style={{ color: '#fff', fontStyle: 'normal' }}>Your balance = Carbon emissions allowed − your carbon footprint.</strong><br />
-              You&apos;re either in{' '}
-              <strong style={{ color: '#4CAF50' }}>surplus</strong>
-              {' '}or{' '}
-              <strong style={{ color: '#FF5252' }}>deficit</strong>.
-              {' '}Trade accordingly.
-            </span>
-          </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/sell" style={{
-              background: '#4CAF50', color: '#fff', padding: '12px 28px',
-              borderRadius: 24, textDecoration: 'none', fontWeight: 700, fontSize: '0.95rem',
-            }}>
-              + List Your Carbssss
-            </Link>
-            <Link href="/how-it-works" style={{
-              background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '12px 28px',
-              borderRadius: 24, textDecoration: 'none', fontWeight: 600, fontSize: '0.95rem',
-              border: '1px solid rgba(255,255,255,0.2)',
-            }}>
-              How It Works
-            </Link>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+            <div>
+              <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', color: '#fff', marginBottom: 4 }}>
+                Green<span style={{ color: '#4CAF50' }}>Credits</span> <span style={{ fontSize: '1rem', color: '#6B7280' }}>Exchange</span>
+              </div>
+              <p style={{ color: '#6B9E7E', margin: 0, fontSize: '0.9rem' }}>
+                Sitting on carbon credits like it&apos;s a flex?<br />
+                Time to trade. Turn good eco-behavior into cold hard rupees. 💸
+              </p>
+              <div style={{ marginTop: 8, fontSize: '0.8rem', color: '#4A7C5E' }}>
+                <strong style={{ color: '#C8E6C9' }}>Balance = emissions allowed − your carbon footprint.</strong>{' '}
+                <strong style={{ color: '#4CAF50' }}>Surplus</strong> → sell.{' '}
+                <strong style={{ color: '#FF5252' }}>Deficit</strong> → buy.
+              </div>
+            </div>
+
+            {/* Trading status + CTA */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                background: tradingActive ? 'rgba(76,175,80,0.15)' : 'rgba(255,82,82,0.15)',
+                border: `1px solid ${tradingActive ? '#4CAF50' : '#FF5252'}`,
+                borderRadius: 20, padding: '6px 14px',
+              }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: tradingActive ? '#4CAF50' : '#FF5252', display: 'inline-block', animation: tradingActive ? 'pulse 1.5s infinite' : 'none' }} />
+                <span style={{ color: tradingActive ? '#4CAF50' : '#FF5252', fontWeight: 700, fontSize: '0.85rem' }}>
+                  {tradingActive === null ? 'Checking...' : tradingActive ? 'TRADING OPEN' : 'TRADING CLOSED'}
+                </span>
+              </div>
+
+              {tradingActive && (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {(userBalance === undefined || userBalance === null || userBalance > 0) && (
+                    <Link href="/sell" style={{ background: '#4CAF50', color: '#fff', padding: '8px 20px', borderRadius: 20, textDecoration: 'none', fontWeight: 700, fontSize: '0.88rem' }}>
+                      + Sell Credits
+                    </Link>
+                  )}
+                  {(userBalance === undefined || userBalance === null || userBalance < 0) && (
+                    <Link href="/buy" style={{ background: '#7B1FA2', color: '#fff', padding: '8px 20px', borderRadius: 20, textDecoration: 'none', fontWeight: 700, fontSize: '0.88rem' }}>
+                      📈 Buy Credits
+                    </Link>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Trading closed banner */}
+      {tradingActive === false && (
+        <div style={{ background: '#1A0A0A', border: '1px solid #FF5252', margin: '20px 24px', borderRadius: 14, padding: '24px', textAlign: 'center', maxWidth: 1100, marginLeft: 'auto', marginRight: 'auto' }}>
+          <div style={{ fontSize: 40, marginBottom: 8 }}>⏸️</div>
+          <div style={{ fontWeight: 800, color: '#FF5252', fontSize: '1.3rem', fontFamily: 'Syne, sans-serif' }}>Trading is currently paused</div>
+          <p style={{ color: '#9E9E9E', margin: '8px 0 0' }}>The admin will open trading when it&apos;s time. Sit tight — the market opens soon.</p>
+        </div>
+      )}
+
       {/* Stats bar */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #C8E6C9', padding: '14px 24px' }}>
+      <div style={{ background: '#161B22', borderBottom: '1px solid #1E3A2F', padding: '12px 24px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', gap: 32, justifyContent: 'center', flexWrap: 'wrap' }}>
           {[
-            { label: 'Live Listings', value: listings.length },
-            { label: 'Total Credits Available', value: listings.reduce((s, l) => s + l.credits_amount, 0) },
+            { label: 'Sell Orders', value: availableSell.length, color: '#4CAF50' },
+            { label: 'Buy Orders', value: availableBuy.length, color: '#CE93D8' },
+            { label: 'Credits for Sale', value: totalSellCredits, color: '#4CAF50' },
+            { label: 'Credits Wanted', value: totalBuyCredits, color: '#CE93D8' },
+            { label: 'Trades Executed', value: trades.length, color: '#FFB74D' },
           ].map(stat => (
             <div key={stat.label} style={{ textAlign: 'center' }}>
-              <div style={{ fontWeight: 800, fontSize: '1.4rem', color: '#1A3C2B' }}>{stat.value}</div>
-              <div style={{ fontSize: '0.78rem', color: '#6B7280' }}>{stat.label}</div>
+              <div style={{ fontWeight: 800, fontSize: '1.3rem', color: stat.color }}>{loading ? '—' : stat.value}</div>
+              <div style={{ fontSize: '0.72rem', color: '#6B7280' }}>{stat.label}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="filter-bar" style={{ maxWidth: 1100, margin: '24px auto 0', padding: '0 24px', width: '100%' }}>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-          <input
-            type="text"
-            placeholder="🔍 Search by stall name..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{
-              flex: 1, minWidth: 200,
-              padding: '10px 16px',
-              border: '1.5px solid #C8E6C9',
-              borderRadius: 10, fontSize: '0.9rem',
-              background: '#fff', color: '#1A3C2B', outline: 'none',
-            }}
-          />
-          <select
-            value={sort}
-            onChange={e => setSort(e.target.value)}
-            style={{
-              padding: '10px 14px',
-              border: '1.5px solid #C8E6C9',
-              borderRadius: 10, fontSize: '0.9rem',
-              background: '#fff', color: '#1A3C2B', outline: 'none', cursor: 'pointer',
-            }}
-          >
-            <option value="newest">Newest First</option>
-            <option value="price_low">Price: Low → High</option>
-            <option value="price_high">Price: High → Low</option>
-            <option value="credits">Most Credits</option>
-          </select>
-        </div>
-        <p style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: 10 }}>
-          {filtered.length} listing{filtered.length !== 1 ? 's' : ''} found
-        </p>
-      </div>
+      {/* Order Book */}
+      <div style={{ maxWidth: 1100, margin: '24px auto', padding: '0 16px', width: '100%' }}>
+        <div className="order-book-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
-      {/* Listings grid */}
-      <div className="listings-grid" style={{ maxWidth: 1100, margin: '0 auto', padding: '8px 24px 48px', width: '100%' }}>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: 80, color: '#6B7280' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>♻️</div>
-            Loading listings...
-          </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 80, color: '#6B7280' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🏜️</div>
-            <div style={{ fontWeight: 600, color: '#1A3C2B', fontSize: '1.1rem' }}>No listings found</div>
-            <p style={{ marginTop: 8 }}>
-              {search ? 'Try a different search term.' : 'Be the first to list your surplus credits!'}
-            </p>
-            <Link href="/sell" style={{
-              display: 'inline-block', marginTop: 16,
-              background: '#4CAF50', color: '#fff', padding: '10px 24px',
-              borderRadius: 20, textDecoration: 'none', fontWeight: 600,
-            }}>
-              + List Credits
-            </Link>
-          </div>
-        ) : (
-          <div className="listing-grid-inner" style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-            gap: 20,
-          }}>
-            {filtered.map((listing, i) => (
-              <div key={listing.id} className="fade-in-up" style={{ animationDelay: `${i * 0.05}s` }}>
-                <ListingCard listing={listing} />
+          {/* SELL ORDERS (Asks) */}
+          <div style={{ background: '#161B22', border: '1px solid #1E3A2F', borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid #1E3A2F', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <span style={{ fontWeight: 700, color: '#4CAF50', fontSize: '0.85rem', letterSpacing: '0.08em' }}>▲ SELL ORDERS</span>
+                <span style={{ color: '#6B7280', fontSize: '0.75rem', marginLeft: 8 }}>asks</span>
               </div>
-            ))}
+              <span style={{ color: '#4CAF50', fontSize: '0.75rem', fontWeight: 600 }}>{availableSell.length} open</span>
+            </div>
+
+            {/* Header row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr', padding: '8px 16px', borderBottom: '1px solid #1E3A2F' }}>
+              {['Stall', 'Price', 'Qty'].map(h => (
+                <span key={h} style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 600, letterSpacing: '0.06em' }}>{h}</span>
+              ))}
+            </div>
+
+            {loading ? (
+              <div style={{ padding: 32, textAlign: 'center', color: '#6B7280', fontSize: '0.85rem' }}>Loading...</div>
+            ) : availableSell.length === 0 ? (
+              <div style={{ padding: 32, textAlign: 'center', color: '#6B7280', fontSize: '0.85rem' }}>No sell orders</div>
+            ) : (
+              <div style={{ maxHeight: 340, overflowY: 'auto' }}>
+                {availableSell.map((order, i) => (
+                  <Link key={order.id} href={`/listing/${order.id}`} style={{ textDecoration: 'none' }}>
+                    <div style={{
+                      display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr',
+                      padding: '10px 16px',
+                      borderBottom: i < availableSell.length - 1 ? '1px solid #1A2A1F' : 'none',
+                      transition: 'background 0.15s',
+                      cursor: 'pointer',
+                      background: 'transparent',
+                    }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#1A2A1F')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <span style={{ color: '#C8E6C9', fontSize: '0.85rem', fontWeight: 500 }}>
+                        {order.profiles?.stall_name ?? '—'}
+                      </span>
+                      <span style={{ color: '#4CAF50', fontSize: '0.88rem', fontWeight: 700 }}>
+                        ₹{Number(order.price_per_credit).toFixed(0)}
+                      </span>
+                      <span style={{ color: '#9E9E9E', fontSize: '0.85rem' }}>{order.available}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* BUY ORDERS (Bids) */}
+          <div style={{ background: '#161B22', border: '1px solid #2A1A3E', borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid #2A1A3E', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <span style={{ fontWeight: 700, color: '#CE93D8', fontSize: '0.85rem', letterSpacing: '0.08em' }}>▼ BUY ORDERS</span>
+                <span style={{ color: '#6B7280', fontSize: '0.75rem', marginLeft: 8 }}>bids</span>
+              </div>
+              <span style={{ color: '#CE93D8', fontSize: '0.75rem', fontWeight: 600 }}>{availableBuy.length} open</span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr', padding: '8px 16px', borderBottom: '1px solid #2A1A3E' }}>
+              {['Stall', 'Bid Price', 'Qty'].map(h => (
+                <span key={h} style={{ fontSize: '0.7rem', color: '#6B7280', fontWeight: 600, letterSpacing: '0.06em' }}>{h}</span>
+              ))}
+            </div>
+
+            {loading ? (
+              <div style={{ padding: 32, textAlign: 'center', color: '#6B7280', fontSize: '0.85rem' }}>Loading...</div>
+            ) : availableBuy.length === 0 ? (
+              <div style={{ padding: 32, textAlign: 'center', color: '#6B7280', fontSize: '0.85rem' }}>No buy orders</div>
+            ) : (
+              <div style={{ maxHeight: 340, overflowY: 'auto' }}>
+                {availableBuy.map((order, i) => (
+                  <div key={order.id} style={{
+                    display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr',
+                    padding: '10px 16px',
+                    borderBottom: i < availableBuy.length - 1 ? '1px solid #1E1428' : 'none',
+                  }}>
+                    <span style={{ color: '#E1BEE7', fontSize: '0.85rem', fontWeight: 500 }}>
+                      {order.profiles?.stall_name ?? '—'}
+                    </span>
+                    <span style={{ color: '#CE93D8', fontSize: '0.88rem', fontWeight: 700 }}>
+                      ₹{Number(order.price_per_credit).toFixed(0)}
+                    </span>
+                    <span style={{ color: '#9E9E9E', fontSize: '0.85rem' }}>{order.remaining}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Trades */}
+        <div style={{ background: '#161B22', border: '1px solid #1E3A2F', borderRadius: 16, marginTop: 16, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid #1E3A2F' }}>
+            <span style={{ fontWeight: 700, color: '#FFB74D', fontSize: '0.85rem', letterSpacing: '0.08em' }}>⚡ RECENT TRADES</span>
+          </div>
+
+          {trades.length === 0 ? (
+            <div style={{ padding: 24, textAlign: 'center', color: '#6B7280', fontSize: '0.85rem' }}>No trades yet. Be the first to trade!</div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #1E3A2F' }}>
+                    {['Seller', 'Buyer', 'Qty', 'Price', 'Total', 'Time'].map(h => (
+                      <th key={h} style={{ padding: '8px 16px', color: '#6B7280', fontWeight: 600, letterSpacing: '0.05em', fontSize: '0.7rem', textAlign: 'left' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {trades.map((trade, i) => (
+                    <tr key={trade.id} style={{ borderBottom: i < trades.length - 1 ? '1px solid #1A2320' : 'none' }}>
+                      <td style={{ padding: '10px 16px', color: '#4CAF50', fontWeight: 600 }}>{usernameMap[trade.seller_id] ?? '—'}</td>
+                      <td style={{ padding: '10px 16px', color: '#CE93D8', fontWeight: 600 }}>{usernameMap[trade.buyer_id] ?? '—'}</td>
+                      <td style={{ padding: '10px 16px', color: '#C8E6C9' }}>{trade.credits_amount}</td>
+                      <td style={{ padding: '10px 16px', color: '#FFB74D', fontWeight: 700 }}>₹{Number(trade.price_per_credit ?? 0).toFixed(0)}</td>
+                      <td style={{ padding: '10px 16px', color: '#fff', fontWeight: 600 }}>₹{Number(trade.total_price ?? 0).toFixed(0)}</td>
+                      <td style={{ padding: '10px 16px', color: '#6B7280' }}>{timeAgo(trade.created_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Quick links */}
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 20, flexWrap: 'wrap' }}>
+          <Link href="/how-it-works" style={{ color: '#4A7C5E', fontSize: '0.85rem', textDecoration: 'none' }}>How It Works →</Link>
+          <Link href="/about" style={{ color: '#4A7C5E', fontSize: '0.85rem', textDecoration: 'none' }}>About →</Link>
+          <Link href="/my-listings" style={{ color: '#4A7C5E', fontSize: '0.85rem', textDecoration: 'none' }}>My Orders →</Link>
+        </div>
       </div>
 
       <style>{`
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         @media (max-width: 640px) {
-          .hero-title { font-size: 1.6rem !important; }
-          .hero-padding { padding: 32px 16px !important; }
-          .filter-bar { padding: 0 16px !important; margin-top: 16px !important; }
-          .filter-bar input { min-width: unset !important; width: 100% !important; }
-          .filter-bar select { width: 100% !important; }
-          .listings-grid { padding: 8px 16px 48px !important; }
-          .listing-grid-inner { grid-template-columns: 1fr !important; gap: 14px !important; }
+          .order-book-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
       <Footer />
     </div>
   )
 }
-

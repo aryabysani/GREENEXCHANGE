@@ -108,7 +108,6 @@ export async function POST(request: Request) {
       .from('profiles')
       .update({
         stall_name: 'Stall (Reset)',
-        whatsapp_number: null,
         carbon_balance: null,
         is_banned: false,
       })
@@ -160,6 +159,43 @@ export async function POST(request: Request) {
       .eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true })
+  }
+
+  // ── toggle-trading ─────────────────────────────────────────────
+  if (action === 'toggle-trading') {
+    const { data: current } = await supabase
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'trading_active')
+      .single()
+    const newValue = current?.value === 'true' ? 'false' : 'true'
+    await supabase.from('system_settings').upsert({ key: 'trading_active', value: newValue })
+    return NextResponse.json({ active: newValue === 'true' })
+  }
+
+  // ── get-trading-status ─────────────────────────────────────────
+  if (action === 'get-trading-status') {
+    const { data } = await supabase.from('system_settings').select('value').eq('key', 'trading_active').single()
+    return NextResponse.json({ active: data?.value === 'true' })
+  }
+
+  // ── get-buy-orders ─────────────────────────────────────────────
+  if (action === 'get-buy-orders') {
+    const { data, error } = await supabase
+      .from('buy_orders')
+      .select('*, profiles(stall_name)')
+      .order('created_at', { ascending: false })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 })
+    const usernameMap: Record<string, string> = {}
+    for (const u of users) { usernameMap[u.id] = (u.email ?? '').replace('@fest.com', '') }
+
+    const enriched = (data ?? []).map((o: Record<string, unknown>) => ({
+      ...o,
+      buyer_username: usernameMap[o.buyer_id as string] ?? '—',
+    }))
+    return NextResponse.json({ data: enriched })
   }
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
