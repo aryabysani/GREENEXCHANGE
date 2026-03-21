@@ -169,8 +169,25 @@ export async function POST(request: Request) {
       .eq('key', 'trading_active')
       .single()
     const newValue = current?.value === 'true' ? 'false' : 'true'
-    await supabase.from('system_settings').upsert({ key: 'trading_active', value: newValue }, { onConflict: 'key' })
-    return NextResponse.json({ active: newValue === 'true' })
+    // Try update first (row should exist from migration seed)
+    const { error: updateErr } = await supabase
+      .from('system_settings')
+      .update({ value: newValue })
+      .eq('key', 'trading_active')
+    if (updateErr) {
+      // Row missing — insert it
+      const { error: insertErr } = await supabase
+        .from('system_settings')
+        .insert({ key: 'trading_active', value: newValue })
+      if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 })
+    }
+    // Read back to confirm
+    const { data: confirmed } = await supabase
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'trading_active')
+      .single()
+    return NextResponse.json({ active: confirmed?.value === 'true' })
   }
 
   // ── get-trading-status ─────────────────────────────────────────
