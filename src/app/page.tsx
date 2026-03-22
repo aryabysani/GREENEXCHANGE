@@ -53,6 +53,7 @@ export default function HomePage() {
   const [tradingActive, setTradingActive] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(true)
   const [userBalance, setUserBalance] = useState<number | null | undefined>(undefined)
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
   const [usernameMap, setUsernameMap] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -61,9 +62,11 @@ export default function HomePage() {
     // Check user balance for CTA
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
+        setIsLoggedIn(true)
         supabase.from('profiles').select('carbon_balance').eq('id', data.user.id).single()
-          .then(({ data: p }) => setUserBalance(p?.carbon_balance ?? null))
+          .then(({ data: p }) => setUserBalance(p?.carbon_balance ?? 0))
       } else {
+        setIsLoggedIn(false)
         setUserBalance(null)
       }
     })
@@ -178,7 +181,7 @@ export default function HomePage() {
                 </span>
               </p>
 
-              {userBalance === null ? (
+              {isLoggedIn === false ? (
                 <div style={{ marginTop: 24 }}>
                   <Link href="/auth" style={{
                     display: 'inline-flex', alignItems: 'center', gap: 10,
@@ -368,7 +371,7 @@ export default function HomePage() {
         </div>
 
         {/* Quick links */}
-        {userBalance !== null && (
+        {isLoggedIn && (
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 20, flexWrap: 'wrap' }}>
             <Link href="/my-orders" style={{ color: '#4A7C5E', fontSize: '0.85rem', textDecoration: 'none' }}>
               My Orders →

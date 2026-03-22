@@ -52,6 +52,30 @@ export default function HowItWorksPage() {
           </div>
         </div>
 
+        {/* Trading Schedule */}
+        <div style={{ background: 'linear-gradient(135deg, #0D2818 0%, #1A0A2E 100%)', border: '1px solid #4CAF5040', borderRadius: 16, padding: '28px 32px', marginBottom: 32 }}>
+          <h2 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '1.3rem', color: '#FFB74D', margin: '0 0 16px' }}>
+            🕐 Trading Schedule
+          </h2>
+          <p style={{ color: '#D4A847', fontSize: '0.95rem', lineHeight: 1.75, margin: '0 0 16px' }}>
+            Trading opens in <strong style={{ color: '#FFD54F' }}>3 slots</strong> announced by the faculty. Each slot is <strong style={{ color: '#FFD54F' }}>15 minutes</strong> long. Outside these windows, the market is closed and orders cannot be placed.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {['Slot 1', 'Slot 2', 'Slot 3'].map((slot, idx) => (
+              <div key={slot} style={{ display: 'flex', gap: 12, alignItems: 'center', background: 'rgba(255,183,77,0.06)', border: '1px solid rgba(255,183,77,0.15)', borderRadius: 10, padding: '12px 16px' }}>
+                <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(255,183,77,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.8rem', color: '#FFB74D', flexShrink: 0 }}>{idx + 1}</div>
+                <div>
+                  <div style={{ color: '#FFD54F', fontWeight: 700, fontSize: '0.9rem' }}>{slot}</div>
+                  <div style={{ color: '#9CA3AF', fontSize: '0.83rem', marginTop: 2 }}>Time announced by faculty — 15 minutes long</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 8, color: '#6B7280', fontSize: '0.82rem' }}>
+            <strong style={{ color: '#A8D5B5' }}>Tip:</strong> Check the homepage status indicator to see if trading is currently open before placing orders.
+          </div>
+        </div>
+
         {/* The 4 steps */}
         <h2 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '1.4rem', color: '#fff', margin: '0 0 20px', textAlign: 'center' }}>
           The Trading Flow
@@ -73,7 +97,7 @@ export default function HowItWorksPage() {
               title: 'Check the Order Book',
               color: '#4CAF50',
               accent: '#1E3A2F',
-              desc: 'The marketplace shows all live sell orders (sorted cheapest first) and live buy bids (sorted highest first) in real time. It updates automatically — no refresh needed.',
+              desc: 'The marketplace shows all live sell orders (sorted cheapest first) and live buy bids (sorted highest first) in real time.',
             },
             {
               num: '03',
@@ -107,7 +131,7 @@ export default function HowItWorksPage() {
               accent: '#1E3A2F',
               desc: 'Visit My Orders to see all your open bids, live sell listings, and completed trades with full price history. You can cancel any open or partial order at any time — unfilled sell credits are refunded to your balance.',
             },
-          ].map((step, i) => (
+          ].map((step) => (
             <div key={step.num} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
               <div style={{
                 width: 44, height: 44, borderRadius: 12, flexShrink: 0, marginTop: 2,
