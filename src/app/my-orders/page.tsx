@@ -141,10 +141,14 @@ export default function MyOrdersPage() {
     })
     const json = await res.json()
     if (res.ok) {
-      // Re-fetch from DB to confirm cancellation actually took effect
+      // Reflect refunded balance in UI
+      if (json.unfilledCredits > 0) {
+        setProfile(prev => prev ? { ...prev, carbon_balance: (prev.carbon_balance ?? 0) + json.unfilledCredits } : prev)
+      }
+      // Re-fetch from DB to confirm cancellation took effect
       const updated = await fetch('/api/my-listings').then(r => r.json()).catch(() => null)
       if (Array.isArray(updated)) setSellOrders(updated)
-      else setSellOrders(prev => prev.filter(o => o.id !== listingId))
+      else setSellOrders(prev => prev.map(o => o.id === listingId ? { ...o, status: 'removed' } : o))
     } else {
       setCancelError(json.error ?? 'Failed to cancel listing.')
     }
@@ -346,35 +350,45 @@ export default function MyOrdersPage() {
         {tab === 'sales' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-            {/* Live sell orders */}
+            {/* All sell orders history */}
             <div>
-              <h3 style={{ color: '#4CAF50', fontWeight: 700, fontSize: '0.82rem', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 10px' }}>♻️ Live Sell Orders</h3>
+              <h3 style={{ color: '#4CAF50', fontWeight: 700, fontSize: '0.82rem', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 10px' }}>♻️ Sell Order History</h3>
               {sellOrders.length === 0 ? (
                 <div style={{ background: '#161B22', border: '1px solid #1E3A2F', borderRadius: 14, padding: '24px', textAlign: 'center', color: '#6B7280', fontSize: '0.9rem' }}>
-                  No active sell orders. <Link href="/sell" style={{ color: '#4CAF50', fontWeight: 600 }}>Post one →</Link>
+                  No sell orders yet. <Link href="/sell" style={{ color: '#4CAF50', fontWeight: 600 }}>Post one →</Link>
                 </div>
               ) : (
                 <div style={{ background: '#161B22', border: '1px solid #1E3A2F', borderRadius: 14, overflow: 'hidden' }}>
                   <div style={{ overflowX: 'auto' }}>
-                  <div style={{ minWidth: 480, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 80px', padding: '10px 20px', borderBottom: '1px solid #1E3A2F' }}>
-                    {['Credits', 'Filled', 'Ask Price', 'Total Value', 'Posted', ''].map(h => <span key={h} style={cell}>{h}</span>)}
+                  <div style={{ minWidth: 540, display: 'grid', gridTemplateColumns: '90px 1fr 1fr 1fr 1fr 80px', padding: '10px 20px', borderBottom: '1px solid #1E3A2F' }}>
+                    {['Status', 'Credits', 'Filled', 'Ask Price', 'Posted', ''].map(h => <span key={h} style={cell}>{h}</span>)}
                   </div>
-                  {sellOrders.map((o, i) => (
-                    <div key={o.id} style={{ minWidth: 480, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 80px', padding: '13px 20px', borderBottom: i < sellOrders.length - 1 ? '1px solid #1A2320' : 'none', alignItems: 'center' }}>
+                  {sellOrders.map((o, i) => {
+                    const statusLabel: Record<string, string> = { live: 'LIVE', partial: 'PARTIAL', sold: 'SOLD', removed: 'CANCELLED' }
+                    const statusColor: Record<string, string> = { live: '#4CAF50', partial: '#FFB74D', sold: '#9E9E9E', removed: '#FF5252' }
+                    const statusBg: Record<string, string> = { live: '#1A3C2B', partial: '#2A1A00', sold: '#1A1A1A', removed: '#2A0A0A' }
+                    const canCancel = o.status === 'live' || o.status === 'partial'
+                    return (
+                    <div key={o.id} style={{ minWidth: 540, display: 'grid', gridTemplateColumns: '90px 1fr 1fr 1fr 1fr 80px', padding: '13px 20px', borderBottom: i < sellOrders.length - 1 ? '1px solid #1A2320' : 'none', alignItems: 'center' }}>
+                      <span style={{ background: statusBg[o.status] ?? '#1A1A1A', color: statusColor[o.status] ?? '#9E9E9E', borderRadius: 6, padding: '2px 8px', fontSize: '0.68rem', fontWeight: 700, width: 'fit-content' }}>
+                        {statusLabel[o.status] ?? o.status.toUpperCase()}
+                      </span>
                       <span style={{ color: '#C8E6C9', fontWeight: 600 }}>{o.credits_amount}</span>
                       <span style={{ color: '#4CAF50' }}>{o.filled_quantity ?? 0}</span>
                       <span style={{ color: '#4CAF50', fontWeight: 700 }}>₹{Number(o.price_per_credit).toFixed(0)}</span>
-                      <span style={{ color: '#fff', fontWeight: 600 }}>₹{(o.credits_amount * Number(o.price_per_credit)).toFixed(0)}</span>
                       <span style={{ color: '#6B7280', fontSize: '0.8rem' }}>{timeAgo(o.created_at)}</span>
                       <div>
-                        <button
-                          onClick={() => cancelSellOrder(o.id)}
-                          disabled={actionId === o.id}
-                          style={{ background: '#2A0A0A', color: '#FF5252', border: '1px solid #FF525240', borderRadius: 6, padding: '4px 10px', fontSize: '0.75rem', fontWeight: 600, cursor: actionId === o.id ? 'not-allowed' : 'pointer', opacity: actionId === o.id ? 0.5 : 1 }}
-                        >Cancel</button>
+                        {canCancel && (
+                          <button
+                            onClick={() => cancelSellOrder(o.id)}
+                            disabled={actionId === o.id}
+                            style={{ background: '#2A0A0A', color: '#FF5252', border: '1px solid #FF525240', borderRadius: 6, padding: '4px 10px', fontSize: '0.75rem', fontWeight: 600, cursor: actionId === o.id ? 'not-allowed' : 'pointer', opacity: actionId === o.id ? 0.5 : 1 }}
+                          >Cancel</button>
+                        )}
                       </div>
                     </div>
-                  ))}
+                    )
+                  })}
                   </div>
                 </div>
               )}

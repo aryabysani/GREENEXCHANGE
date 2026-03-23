@@ -18,11 +18,9 @@ async function matchSellOrder(listingId: string, sellerId: string, totalQty: num
     .order('created_at', { ascending: true })
 
   let remainingQty = totalQty
-  const cancelledBuyers = new Set<string>()
 
   for (const bo of buyOrders ?? []) {
     if (remainingQty <= 0) break
-    if (cancelledBuyers.has(bo.buyer_id)) continue
     const available = bo.quantity - bo.filled_quantity
     if (available <= 0) continue
     const fillQty = Math.min(remainingQty, available)
@@ -34,8 +32,7 @@ async function matchSellOrder(listingId: string, sellerId: string, totalQty: num
     }).eq('id', bo.id)
 
     const { data: bp } = await admin.from('profiles').select('carbon_balance').eq('id', bo.buyer_id).single()
-    const newBuyerBalance = (bp?.carbon_balance ?? 0) + fillQty
-    await admin.from('profiles').update({ carbon_balance: newBuyerBalance }).eq('id', bo.buyer_id)
+    await admin.from('profiles').update({ carbon_balance: (bp?.carbon_balance ?? 0) + fillQty }).eq('id', bo.buyer_id)
 
     await admin.from('transactions').insert({
       listing_id: listingId,
@@ -47,12 +44,6 @@ async function matchSellOrder(listingId: string, sellerId: string, totalQty: num
       total_price: fillQty * tradePrice,
     })
 
-    // Auto-cancel buyer's remaining open buy orders if balance is now non-negative
-    if (newBuyerBalance >= 0) {
-      await admin.from('buy_orders').update({ status: 'cancelled' }).eq('buyer_id', bo.buyer_id).in('status', ['open', 'partial'])
-      cancelledBuyers.add(bo.buyer_id)
-    }
-
     remainingQty -= fillQty
   }
 
@@ -63,10 +54,7 @@ async function matchSellOrder(listingId: string, sellerId: string, totalQty: num
         ? { filled_quantity: filledSoFar, status: 'sold' }
         : { filled_quantity: filledSoFar }
     ).eq('id', listingId)
-
-    // Deduct only what was actually sold from seller's balance
-    const { data: sp } = await admin.from('profiles').select('carbon_balance').eq('id', sellerId).single()
-    await admin.from('profiles').update({ carbon_balance: (sp?.carbon_balance ?? 0) - filledSoFar }).eq('id', sellerId)
+    // Seller balance already deducted upfront — no deduction here
   }
 
   return filledSoFar
@@ -95,11 +83,7 @@ export async function POST(request: Request) {
   if (profile?.is_banned) return NextResponse.json({ error: 'Your account is banned.' }, { status: 403 })
   if (profile?.carbon_balance == null) return NextResponse.json({ error: 'Your carbon balance has not been set by admin yet.' }, { status: 400 })
 
-  // Account for credits already committed in active listings
-  const { data: activeListings } = await admin.from('listings').select('credits_amount, filled_quantity').eq('seller_id', user.id).neq('status', 'sold').neq('status', 'removed')
-  const alreadyListed = (activeListings ?? []).reduce((sum, l) => sum + (l.credits_amount - (l.filled_quantity ?? 0)), 0)
-  const availableBalance = profile.carbon_balance - alreadyListed
-  if (availableBalance < quantity) return NextResponse.json({ error: `You only have ${availableBalance} credits available (${alreadyListed} already listed).` }, { status: 400 })
+  if (profile.carbon_balance < quantity) return NextResponse.json({ error: `You only have ${profile.carbon_balance} credits available.` }, { status: 400 })
 
   const { data: listing, error: insertError } = await admin.from('listings').insert({
     seller_id: user.id,
@@ -112,6 +96,9 @@ export async function POST(request: Request) {
   }).select().single()
 
   if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
+
+  // Deduct full listing amount upfront (escrowed until sold or cancelled)
+  await admin.from('profiles').update({ carbon_balance: profile.carbon_balance - quantity }).eq('id', user.id)
 
   const matched = await matchSellOrder(listing.id, user.id, quantity, pricePerCredit)
 

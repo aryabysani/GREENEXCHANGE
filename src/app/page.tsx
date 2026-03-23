@@ -192,16 +192,12 @@ export default function HomePage() {
                 </div>
               ) : tradingActive && (
                 <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
-                  {(userBalance === undefined || userBalance >= 0) && (
-                    <Link href="/sell" style={{ background: 'linear-gradient(135deg, #2E7D32, #4CAF50)', color: '#fff', padding: '11px 24px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '0.9rem', boxShadow: '0 4px 16px rgba(76,175,80,0.25)' }}>
-                      ♻️ Sell Credits
-                    </Link>
-                  )}
-                  {(userBalance === undefined || userBalance < 0) && (
-                    <Link href="/buy" style={{ background: 'linear-gradient(135deg, #4A148C, #7B1FA2)', color: '#fff', padding: '11px 24px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '0.9rem', boxShadow: '0 4px 16px rgba(123,31,162,0.25)' }}>
-                      📈 Buy Credits
-                    </Link>
-                  )}
+                  <Link href="/sell" style={{ background: 'linear-gradient(135deg, #2E7D32, #4CAF50)', color: '#fff', padding: '11px 24px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '0.9rem', boxShadow: '0 4px 16px rgba(76,175,80,0.25)' }}>
+                    ♻️ Sell Credits
+                  </Link>
+                  <Link href="/buy" style={{ background: 'linear-gradient(135deg, #4A148C, #7B1FA2)', color: '#fff', padding: '11px 24px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '0.9rem', boxShadow: '0 4px 16px rgba(123,31,162,0.25)' }}>
+                    📈 Buy Credits
+                  </Link>
                 </div>
               )}
             </div>
