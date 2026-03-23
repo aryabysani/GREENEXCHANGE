@@ -107,6 +107,7 @@ export async function POST(request: Request) {
     total_price: quantity * pricePerCredit,
     status: 'live',
     filled_quantity: 0,
+    is_hidden: false,
   }).select().single()
 
   if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
