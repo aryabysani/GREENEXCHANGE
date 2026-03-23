@@ -96,7 +96,7 @@ export async function POST(request: Request) {
   if (profile?.carbon_balance == null) return NextResponse.json({ error: 'Your carbon balance has not been set by admin yet.' }, { status: 400 })
 
   // Account for credits already committed in active listings
-  const { data: activeListings } = await admin.from('listings').select('credits_amount, filled_quantity').eq('seller_id', user.id).in('status', ['live', 'partial'])
+  const { data: activeListings } = await admin.from('listings').select('credits_amount, filled_quantity').eq('seller_id', user.id).neq('status', 'sold').neq('status', 'removed')
   const alreadyListed = (activeListings ?? []).reduce((sum, l) => sum + (l.credits_amount - (l.filled_quantity ?? 0)), 0)
   const availableBalance = profile.carbon_balance - alreadyListed
   if (availableBalance < quantity) return NextResponse.json({ error: `You only have ${availableBalance} credits available (${alreadyListed} already listed).` }, { status: 400 })

@@ -78,7 +78,8 @@ export async function POST(request: Request) {
       .from('listings')
       .update({ is_hidden: true })
       .eq('seller_id', id)
-      .in('status', ['live', 'partial'])
+      .neq('status', 'sold')
+      .neq('status', 'removed')
 
     // Kick the user out of all active sessions
     await revokeUserSessions(id)

@@ -12,7 +12,8 @@ async function matchBuyOrder(buyOrderId: string, buyerId: string, totalQty: numb
   const { data: sellOrders } = await admin
     .from('listings')
     .select('*')
-    .in('status', ['live', 'partial'])
+    .neq('status', 'sold')
+    .neq('status', 'removed')
     .lte('price_per_credit', maxPrice)
     .order('price_per_credit', { ascending: true })
     .order('created_at', { ascending: true })
