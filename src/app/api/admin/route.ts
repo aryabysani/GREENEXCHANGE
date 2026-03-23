@@ -74,20 +74,33 @@ export async function POST(request: Request) {
 
   // ── ban ──────────────────────────────────────────────────────
   if (action === 'ban') {
-    // Mark profile as banned
     const { error: profileErr } = await supabase
       .from('profiles')
       .update({ is_banned: true })
       .eq('id', id)
     if (profileErr) return NextResponse.json({ error: profileErr.message }, { status: 500 })
 
-    // Hide all live/partial listings from this stall
-    await supabase
+    // Cancel live/partial sell listings — refund only the unfilled credits
+    const { data: listings } = await supabase
       .from('listings')
-      .update({ is_hidden: true })
+      .select('id, credits_amount, filled_quantity')
       .eq('seller_id', id)
-      .neq('status', 'sold')
-      .neq('status', 'removed')
+      .in('status', ['live', 'partial'])
+    if (listings && listings.length > 0) {
+      const unfilledTotal = listings.reduce((sum, l) => sum + (l.credits_amount - (l.filled_quantity ?? 0)), 0)
+      await supabase.from('listings').update({ status: 'removed' }).in('id', listings.map(l => l.id))
+      if (unfilledTotal > 0) {
+        const { data: prof } = await supabase.from('profiles').select('carbon_balance').eq('id', id).single()
+        await supabase.from('profiles').update({ carbon_balance: (prof?.carbon_balance ?? 0) + unfilledTotal }).eq('id', id)
+      }
+    }
+
+    // Cancel open/partial buy orders — no balance to refund (buyers pay offline)
+    await supabase
+      .from('buy_orders')
+      .update({ status: 'cancelled' })
+      .eq('buyer_id', id)
+      .in('status', ['open', 'partial'])
 
     // Kick the user out of all active sessions
     await revokeUserSessions(id)
@@ -97,19 +110,11 @@ export async function POST(request: Request) {
 
   // ── unban ────────────────────────────────────────────────────
   if (action === 'unban') {
-    // Remove ban
     const { error: profileErr } = await supabase
       .from('profiles')
       .update({ is_banned: false })
       .eq('id', id)
     if (profileErr) return NextResponse.json({ error: profileErr.message }, { status: 500 })
-
-    // Restore all hidden listings for this stall back to live
-    await supabase
-      .from('listings')
-      .update({ is_hidden: false })
-      .eq('seller_id', id)
-      .eq('is_hidden', true)
 
     return NextResponse.json({ success: true })
   }

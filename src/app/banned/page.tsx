@@ -1,14 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
-
 export default function BannedPage() {
-  // Sign out the user as soon as they land here
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.signOut()
-  }, [])
 
   return (
     <div style={{
@@ -42,7 +34,7 @@ export default function BannedPage() {
 
         <p style={{ color: '#4B5563', fontSize: '1rem', lineHeight: 1.7, margin: '0 0 24px' }}>
           You have been banned as you have <strong>violated the rules</strong> of GreenCredits.
-          All your active listings have been hidden.
+          You cannot view the market or place any buy or sell orders.
         </p>
 
         <div style={{

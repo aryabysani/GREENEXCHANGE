@@ -70,9 +70,12 @@ export default function HomePage() {
     // Check user balance for CTA
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
-        setIsLoggedIn(true)
-        supabase.from('profiles').select('carbon_balance').eq('id', data.user.id).single()
-          .then(({ data: p }) => setUserBalance(p?.carbon_balance ?? 0))
+        supabase.from('profiles').select('carbon_balance, is_banned').eq('id', data.user.id).single()
+          .then(({ data: p }) => {
+            if (p?.is_banned) { window.location.href = '/banned'; return }
+            setIsLoggedIn(true)
+            setUserBalance(p?.carbon_balance ?? 0)
+          })
       } else {
         setIsLoggedIn(false)
         setUserBalance(null)

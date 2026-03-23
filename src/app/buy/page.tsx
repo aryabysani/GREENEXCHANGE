@@ -29,8 +29,11 @@ export default function BuyPage() {
     supabase.auth.getUser().then(({ data, error }) => {
       if (error || !data.user) { router.push('/auth'); return }
       setUserId(data.user.id)
-      supabase.from('profiles').select('team_username, carbon_balance').eq('id', data.user.id).single()
-        .then(({ data: p }) => setProfile(p))
+      supabase.from('profiles').select('team_username, carbon_balance, is_banned').eq('id', data.user.id).single()
+        .then(({ data: p }) => {
+          if (p?.is_banned) { router.push('/banned'); return }
+          setProfile(p)
+        })
         .catch(() => {})
         .finally(() => setAuthLoading(false))
     })
