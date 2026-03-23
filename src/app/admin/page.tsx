@@ -32,6 +32,7 @@ type Transaction = {
   created_at: string
   seller_username: string
   buyer_username: string
+  reversed: boolean
 }
 
 type TeamTransaction = {
@@ -435,31 +436,44 @@ export default function AdminPage() {
                 <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.87rem' }}>
                   <thead>
                     <tr style={{ background: '#F0F7F1' }}>
-                      {['#', 'Seller', 'Buyer', 'Credits Traded', 'Amount (₹)', 'Date & Time'].map(h => (
+                      {['#', 'Seller', 'Buyer', 'Credits Traded', 'Amount (₹)', 'Date & Time', ''].map(h => (
                         <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#6B7280', fontWeight: 600, fontSize: '0.78rem', textTransform: 'uppercase' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {transactions.map((t, i) => (
-                      <tr key={t.id} style={{ borderTop: '1px solid #E8F5E9', background: i % 2 === 0 ? '#fff' : '#FAFFFE' }}>
+                      <tr key={t.id} style={{ borderTop: '1px solid #E8F5E9', background: t.reversed ? '#FFF8F8' : i % 2 === 0 ? '#fff' : '#FAFFFE', opacity: t.reversed ? 0.6 : 1 }}>
                         <td style={{ padding: '12px 16px', color: '#9E9E9E', fontSize: '0.8rem' }}>{transactions.length - i}</td>
-                        <td style={{ padding: '12px 16px', fontWeight: 700, color: '#C62828', fontFamily: 'monospace' }}>
+                        <td style={{ padding: '12px 16px', fontWeight: 700, color: '#C62828', fontFamily: 'monospace', textDecoration: t.reversed ? 'line-through' : 'none' }}>
                           {t.seller_username}
                         </td>
-                        <td style={{ padding: '12px 16px', fontWeight: 700, color: '#2D6A4F', fontFamily: 'monospace' }}>
+                        <td style={{ padding: '12px 16px', fontWeight: 700, color: '#2D6A4F', fontFamily: 'monospace', textDecoration: t.reversed ? 'line-through' : 'none' }}>
                           {t.buyer_username}
                         </td>
                         <td style={{ padding: '12px 16px' }}>
-                          <span style={{ background: '#E8F5E9', color: '#2D6A4F', borderRadius: 6, padding: '2px 10px', fontWeight: 700 }}>
+                          <span style={{ background: '#E8F5E9', color: '#2D6A4F', borderRadius: 6, padding: '2px 10px', fontWeight: 700, textDecoration: t.reversed ? 'line-through' : 'none' }}>
                             ♻️ {t.credits_amount} credits
                           </span>
                         </td>
-                        <td style={{ padding: '12px 16px', fontWeight: 700, color: '#4CAF50' }}>
+                        <td style={{ padding: '12px 16px', fontWeight: 700, color: '#4CAF50', textDecoration: t.reversed ? 'line-through' : 'none' }}>
                           {t.total_price != null ? `₹${Number(t.total_price).toFixed(0)}` : '—'}
                         </td>
                         <td style={{ padding: '12px 16px', color: '#6B7280', fontSize: '0.82rem' }}>
                           {new Date(t.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          {t.reversed ? (
+                            <span style={{ background: '#FFEBEE', color: '#C62828', borderRadius: 6, padding: '2px 8px', fontSize: '0.75rem', fontWeight: 700 }}>REVERSED</span>
+                          ) : (
+                            <button
+                              onClick={() => handleAction('reverse-transaction', t.id, `Reverse transaction #${transactions.length - i}?`)}
+                              disabled={actionLoading === t.id + 'reverse-transaction'}
+                              style={{ background: '#FFF3E0', color: '#E65100', border: '1px solid #FFE082', borderRadius: 6, padding: '4px 10px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
+                            >
+                              ↩️ Reverse
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
