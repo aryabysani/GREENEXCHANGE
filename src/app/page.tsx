@@ -111,7 +111,12 @@ export default function HomePage() {
     // Initial load
     Promise.all([fetchSellOrders(), fetchBuyOrders(), fetchTrades()]).then(() => setLoading(false))
 
-    // Realtime subscriptions — auto-update when any order or trade changes
+    // Poll every 4s as fallback (realtime requires Supabase replication to be enabled)
+    const dataInterval = setInterval(() => {
+      fetchSellOrders(); fetchBuyOrders(); fetchTrades()
+    }, 4000)
+
+    // Realtime subscriptions — fire immediately if replication is enabled
     const channel = supabase
       .channel('order-book')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'listings' }, () => fetchSellOrders())
@@ -119,7 +124,7 @@ export default function HomePage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => { fetchTrades(); fetchSellOrders(); fetchBuyOrders() })
       .subscribe()
 
-    return () => { supabase.removeChannel(channel); clearInterval(tradingInterval) }
+    return () => { supabase.removeChannel(channel); clearInterval(tradingInterval); clearInterval(dataInterval) }
   }, [])
 
   const availableSell = sellOrders.map(s => ({ ...s, available: s.credits_amount - (s.filled_quantity ?? 0) })).filter(s => s.available > 0)

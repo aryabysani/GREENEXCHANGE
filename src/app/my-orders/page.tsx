@@ -141,7 +141,10 @@ export default function MyOrdersPage() {
     })
     const json = await res.json()
     if (res.ok) {
-      setSellOrders(prev => prev.filter(o => o.id !== listingId))
+      // Re-fetch from DB to confirm cancellation actually took effect
+      const updated = await fetch('/api/my-listings').then(r => r.json()).catch(() => null)
+      if (Array.isArray(updated)) setSellOrders(updated)
+      else setSellOrders(prev => prev.filter(o => o.id !== listingId))
     } else {
       setCancelError(json.error ?? 'Failed to cancel listing.')
     }
