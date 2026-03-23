@@ -7,14 +7,28 @@ const admin = createClient(
 )
 
 export async function GET() {
-  const { data, error } = await admin
+  const { data: listings, error } = await admin
     .from('listings')
-    .select('*, seller:profiles(team_username)')
+    .select('*')
     .neq('status', 'sold')
     .neq('status', 'removed')
     .eq('is_hidden', false)
     .order('price_per_credit', { ascending: true })
 
   if (error) return NextResponse.json([], { status: 200 })
-  return NextResponse.json(data ?? [])
+  if (!listings || listings.length === 0) return NextResponse.json([])
+
+  // Fetch seller names separately
+  const sellerIds = [...new Set(listings.map((l: { seller_id: string }) => l.seller_id))]
+  const { data: profiles } = await admin
+    .from('profiles')
+    .select('id, team_username')
+    .in('id', sellerIds)
+
+  const nameMap: Record<string, string> = {}
+  for (const p of profiles ?? []) nameMap[p.id] = p.team_username
+
+  return NextResponse.json(
+    listings.map((l: { seller_id: string }) => ({ ...l, profiles: { team_username: nameMap[l.seller_id] ?? '—' } }))
+  )
 }

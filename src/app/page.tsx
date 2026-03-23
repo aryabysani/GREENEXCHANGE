@@ -78,8 +78,8 @@ export default function HomePage() {
     const tradingInterval = setInterval(checkTrading, 10000)
 
     const fetchSellOrders = async () => {
-      const data: Record<string, unknown>[] = await fetch(`/api/listings?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).catch(() => [])
-      setSellOrders(data.map(o => ({ ...o, profiles: { team_username: (o.seller as Record<string, string>)?.team_username ?? '—' } })) as SellOrder[])
+      const data = await fetch(`/api/listings?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).catch(() => [])
+      setSellOrders(Array.isArray(data) ? data as SellOrder[] : [])
     }
 
     const fetchBuyOrders = async () => {
