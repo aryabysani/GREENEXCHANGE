@@ -13,7 +13,6 @@ async function matchBuyOrder(buyOrderId: string, buyerId: string, totalQty: numb
     .from('listings')
     .select('*')
     .in('status', ['live', 'partial'])
-    .eq('is_hidden', false)
     .lte('price_per_credit', maxPrice)
     .order('price_per_credit', { ascending: true })
     .order('created_at', { ascending: true })
@@ -35,6 +34,9 @@ async function matchBuyOrder(buyOrderId: string, buyerId: string, totalQty: numb
 
     const { data: bp } = await admin.from('profiles').select('carbon_balance').eq('id', buyerId).single()
     await admin.from('profiles').update({ carbon_balance: (bp?.carbon_balance ?? 0) + fillQty }).eq('id', buyerId)
+
+    const { data: sp } = await admin.from('profiles').select('carbon_balance').eq('id', sell.seller_id).single()
+    await admin.from('profiles').update({ carbon_balance: (sp?.carbon_balance ?? 0) - fillQty }).eq('id', sell.seller_id)
 
     await admin.from('transactions').insert({
       listing_id: sell.id,
@@ -96,8 +98,12 @@ export async function POST(request: Request) {
   if (!quantity || quantity <= 0) return NextResponse.json({ error: 'Invalid quantity' }, { status: 400 })
   if (!pricePerCredit || pricePerCredit <= 0) return NextResponse.json({ error: 'Invalid price' }, { status: 400 })
 
-  const maxAllowed = Math.abs(profile.carbon_balance)
-  if (quantity > maxAllowed) return NextResponse.json({ error: `You can only buy up to ${maxAllowed} credits (your current deficit).` }, { status: 400 })
+  // Account for credits already committed in open buy orders
+  const { data: activeBuyOrders } = await admin.from('buy_orders').select('quantity, filled_quantity').eq('buyer_id', user.id).in('status', ['open', 'partial'])
+  const alreadyOrdered = (activeBuyOrders ?? []).reduce((sum, o) => sum + (o.quantity - (o.filled_quantity ?? 0)), 0)
+  const maxAllowed = Math.abs(profile.carbon_balance) - alreadyOrdered
+  if (maxAllowed <= 0) return NextResponse.json({ error: 'You already have open buy orders covering your full deficit.' }, { status: 400 })
+  if (quantity > maxAllowed) return NextResponse.json({ error: `You can only buy up to ${maxAllowed} more credits (deficit already partially covered by open orders).` }, { status: 400 })
 
   const { data: buyOrder, error: insertError } = await admin.from('buy_orders').insert({
     buyer_id: user.id,

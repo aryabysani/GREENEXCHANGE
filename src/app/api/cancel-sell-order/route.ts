@@ -40,13 +40,5 @@ export async function POST(request: Request) {
 
   if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
 
-  // Refund unfilled credits to seller's balance (using fresh DB values)
-  const unfilledCredits = listing.credits_amount - (listing.filled_quantity ?? 0)
-  if (unfilledCredits > 0) {
-    const { data: profile } = await admin.from('profiles').select('carbon_balance').eq('id', user.id).single()
-    const newBalance = (profile?.carbon_balance ?? 0) + unfilledCredits
-    await admin.from('profiles').update({ carbon_balance: newBalance }).eq('id', user.id)
-  }
-
-  return NextResponse.json({ success: true, unfilledCredits })
+  return NextResponse.json({ success: true })
 }

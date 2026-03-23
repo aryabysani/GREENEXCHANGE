@@ -156,30 +156,11 @@ export async function POST(request: Request) {
 
   // ── remove-listing ────────────────────────────────────────────
   if (action === 'remove-listing') {
-    // Fetch listing first so we can refund unfilled credits to seller
-    const { data: listing, error: fetchErr } = await supabase
-      .from('listings')
-      .select('seller_id, credits_amount, filled_quantity, status')
-      .eq('id', id)
-      .single()
-    if (fetchErr || !listing) return NextResponse.json({ error: fetchErr?.message ?? 'Listing not found' }, { status: 500 })
-
     const { error } = await supabase
       .from('listings')
       .update({ status: 'removed' })
       .eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-    // Refund unfilled credits back to seller if listing was live
-    if (['live', 'partial'].includes(listing.status)) {
-      const unfilledCredits = listing.credits_amount - (listing.filled_quantity ?? 0)
-      if (unfilledCredits > 0) {
-        const { data: sellerProfile } = await supabase.from('profiles').select('carbon_balance').eq('id', listing.seller_id).single()
-        await supabase.from('profiles').update({
-          carbon_balance: (sellerProfile?.carbon_balance ?? 0) + unfilledCredits,
-        }).eq('id', listing.seller_id)
-      }
-    }
 
     return NextResponse.json({ success: true })
   }

@@ -97,16 +97,6 @@ export default function ListingDetailPage() {
 
     await supabase.from('listings').update({ status: 'removed' }).eq('id', id)
 
-    // Refund only unfilled credits back to seller
-    if (listing) {
-      const unfilledCredits = listing.credits_amount - (listing.filled_quantity ?? 0)
-      if (unfilledCredits > 0) {
-        const { data: profile } = await supabase.from('profiles').select('carbon_balance').eq('id', user.id).single()
-        const currentBalance = profile?.carbon_balance ?? 0
-        await supabase.from('profiles').update({ carbon_balance: currentBalance + unfilledCredits }).eq('id', user.id)
-      }
-    }
-
     router.push('/my-orders')
     setActionLoading(false)
   }
