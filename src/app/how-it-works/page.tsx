@@ -21,7 +21,7 @@ export default function HowItWorksPage() {
           </h1>
           <p style={{ color: '#6B9E7E', fontSize: '1rem', lineHeight: 1.6, margin: 0 }}>
             GreenCredits uses a <strong style={{ color: '#4CAF50' }}>live limit order book</strong> — exactly like a stock market.<br />
-            Orders match automatically. No WhatsApp. No middleman. Instant.
+            Orders match automatically. No middleman. Instant.
           </p>
         </div>
       </div>
@@ -241,7 +241,7 @@ export default function HowItWorksPage() {
           {[
             { icon: '🔐', text: 'Log in with your assigned username (e.g. stall01) and password. Your account was pre-created by the admin — no sign-up.' },
             { icon: '⚖️', text: 'You can only sell as many credits as your current final balance. Credits are locked (escrowed) the moment you list them, so you can\'t double-sell.' },
-            { icon: '🤖', text: 'Matching is fully automatic. No manual confirmation or WhatsApp needed.' },
+            { icon: '🤖', text: 'Matching is fully automatic. No manual confirmation needed.' },
             { icon: '❌', text: 'You can cancel any open or partial order from My Orders. Unfilled sell credits are immediately refunded to your balance. Partially filled cancelled orders show as "Partially Cancelled".' },
             { icon: '📉', text: 'Once your deficit reaches zero (balance ≥ 0), your remaining open buy orders are automatically cancelled.' },
             { icon: '🕐', text: 'Trading only works when the admin has opened the market. Check the status indicator on the homepage.' },
