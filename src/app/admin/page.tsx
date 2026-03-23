@@ -10,7 +10,9 @@ type Profile = {
   id: string
   username: string
   team_username: string
-  carbon_balance: number
+  carbon_balance: number | null
+  original_balance: number | null
+  penalty: number | null
   is_banned: boolean
 }
 
@@ -63,7 +65,7 @@ export default function AdminPage() {
   const [tradingLoading, setTradingLoading] = useState(false)
   const [exportLoading, setExportLoading] = useState(false)
   const [showExportMenu, setShowExportMenu] = useState(false)
-  const [editingBalance, setEditingBalance] = useState<string | null>(null)
+  const [editingField, setEditingField] = useState<{ id: string; field: 'original_balance' | 'penalty' } | null>(null)
   const [editingValue, setEditingValue] = useState('')
   const [selectedTeam, setSelectedTeam] = useState<{ id: string; team_username: string } | null>(null)
   const [teamTxns, setTeamTxns] = useState<TeamTransaction[]>([])
@@ -151,8 +153,8 @@ export default function AdminPage() {
     } else if (type === 'profiles') {
       const rows: Profile[] = data ?? []
       downloadCsv([
-        ['Team Username', 'Login Username', 'Carbon Balance', 'Status'],
-        ...rows.map(p => [p.team_username, p.username, String(p.carbon_balance ?? ''), p.is_banned ? 'Banned' : 'Active']),
+        ['Team Username', 'Login Username', 'Orig. Balance', 'Penalty', 'Final Balance', 'Status'],
+        ...rows.map(p => [p.team_username, p.username, String(p.original_balance ?? ''), String(p.penalty ?? 0), String(p.carbon_balance ?? ''), p.is_banned ? 'Banned' : 'Active']),
       ], 'greencredits-teams')
     } else if (type === 'listings') {
       const rows: Listing[] = data ?? []
@@ -169,18 +171,19 @@ export default function AdminPage() {
     setExportLoading(false)
   }
 
-  const saveBalance = async (id: string) => {
+  const saveField = async (id: string, field: 'original_balance' | 'penalty') => {
     const val = parseInt(editingValue, 10)
-    if (isNaN(val) || val < 0) { setMsg('❌ Invalid balance value'); setEditingBalance(null); return }
-    setActionLoading(id + 'balance')
-    const { success, error } = await call('set-balance', id, val)
+    if (isNaN(val) || val < 0) { setMsg('❌ Invalid value'); setEditingField(null); return }
+    setActionLoading(id + field)
+    const action = field === 'original_balance' ? 'set-original-balance' : 'set-penalty'
+    const { success, error, carbon_balance } = await call(action, id, val)
     if (success) {
-      setMsg(`✅ Balance updated to ${val}`)
-      setProfiles(prev => prev.map(p => p.id === id ? { ...p, carbon_balance: val } : p))
+      setMsg(`✅ ${field === 'original_balance' ? 'Original balance' : 'Penalty'} updated to ${val}`)
+      setProfiles(prev => prev.map(p => p.id === id ? { ...p, [field]: val, carbon_balance: carbon_balance ?? p.carbon_balance } : p))
     } else {
       setMsg(`❌ ${error}`)
     }
-    setEditingBalance(null)
+    setEditingField(null)
     setActionLoading(null)
   }
 
@@ -371,7 +374,7 @@ export default function AdminPage() {
               <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.87rem' }}>
                 <thead>
                   <tr style={{ background: '#F0F7F1' }}>
-                    {['Username', 'Team Username', 'Balance', 'Status', 'Actions'].map(h => (
+                    {['Username', 'Team Username', 'Orig. Balance', 'Penalty', 'Final Balance', 'Status', 'Actions'].map(h => (
                       <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#6B7280', fontWeight: 600, fontSize: '0.78rem', textTransform: 'uppercase' }}>{h}</th>
                     ))}
                   </tr>
@@ -381,30 +384,59 @@ export default function AdminPage() {
                     <tr key={p.id} style={{ borderTop: '1px solid #E8F5E9', background: p.is_banned ? '#FFF3F3' : i % 2 === 0 ? '#fff' : '#FAFFFE' }}>
                       <td style={{ padding: '12px 16px', color: '#6B7280', fontFamily: 'monospace', fontSize: '0.85rem' }}>{p.username}</td>
                       <td style={{ padding: '12px 16px', fontWeight: 600, color: '#1A3C2B' }}>{p.team_username}</td>
+                      {/* Orig. Balance */}
                       <td style={{ padding: '12px 16px' }}>
-                        {editingBalance === p.id ? (
+                        {editingField?.id === p.id && editingField.field === 'original_balance' ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             <input
-                              type="number"
-                              min={0}
-                              value={editingValue}
+                              type="number" min={0} value={editingValue}
                               onChange={e => setEditingValue(e.target.value)}
-                              onKeyDown={e => { if (e.key === 'Enter') saveBalance(p.id); if (e.key === 'Escape') setEditingBalance(null) }}
+                              onKeyDown={e => { if (e.key === 'Enter') saveField(p.id, 'original_balance'); if (e.key === 'Escape') setEditingField(null) }}
                               autoFocus
                               style={{ width: 72, padding: '3px 7px', borderRadius: 6, border: '1.5px solid #4CAF50', fontSize: '0.85rem', fontWeight: 700, color: '#1A3C2B', outline: 'none' }}
                             />
-                            <button onClick={() => saveBalance(p.id)} disabled={actionLoading === p.id + 'balance'} style={{ background: '#4CAF50', color: '#fff', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>✓</button>
-                            <button onClick={() => setEditingBalance(null)} style={{ background: '#F5F5F5', color: '#9E9E9E', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontSize: '0.8rem' }}>✕</button>
+                            <button onClick={() => saveField(p.id, 'original_balance')} disabled={actionLoading === p.id + 'original_balance'} style={{ background: '#4CAF50', color: '#fff', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>✓</button>
+                            <button onClick={() => setEditingField(null)} style={{ background: '#F5F5F5', color: '#9E9E9E', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontSize: '0.8rem' }}>✕</button>
                           </div>
                         ) : (
                           <span
-                            onClick={() => { setEditingBalance(p.id); setEditingValue(String(p.carbon_balance ?? 0)) }}
+                            onClick={() => { setEditingField({ id: p.id, field: 'original_balance' }); setEditingValue(String(p.original_balance ?? 0)) }}
                             title="Click to edit"
-                            style={{ background: '#E8F5E9', color: '#2D6A4F', borderRadius: 6, padding: '2px 8px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                            style={{ background: '#E3F2FD', color: '#1565C0', borderRadius: 6, padding: '2px 8px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
                           >
-                            ♻️ {p.carbon_balance ?? '—'} <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>✏️</span>
+                            {p.original_balance ?? '—'} <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>✏️</span>
                           </span>
                         )}
+                      </td>
+                      {/* Penalty */}
+                      <td style={{ padding: '12px 16px' }}>
+                        {editingField?.id === p.id && editingField.field === 'penalty' ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <input
+                              type="number" min={0} value={editingValue}
+                              onChange={e => setEditingValue(e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Enter') saveField(p.id, 'penalty'); if (e.key === 'Escape') setEditingField(null) }}
+                              autoFocus
+                              style={{ width: 72, padding: '3px 7px', borderRadius: 6, border: '1.5px solid #FF5252', fontSize: '0.85rem', fontWeight: 700, color: '#1A3C2B', outline: 'none' }}
+                            />
+                            <button onClick={() => saveField(p.id, 'penalty')} disabled={actionLoading === p.id + 'penalty'} style={{ background: '#FF5252', color: '#fff', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>✓</button>
+                            <button onClick={() => setEditingField(null)} style={{ background: '#F5F5F5', color: '#9E9E9E', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontSize: '0.8rem' }}>✕</button>
+                          </div>
+                        ) : (
+                          <span
+                            onClick={() => { setEditingField({ id: p.id, field: 'penalty' }); setEditingValue(String(p.penalty ?? 0)) }}
+                            title="Click to edit"
+                            style={{ background: '#FFEBEE', color: '#C62828', borderRadius: 6, padding: '2px 8px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                          >
+                            {p.penalty ?? 0} <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>✏️</span>
+                          </span>
+                        )}
+                      </td>
+                      {/* Final Balance (read-only) */}
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{ background: '#E8F5E9', color: '#2D6A4F', borderRadius: 6, padding: '2px 8px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          ♻️ {p.carbon_balance ?? '—'}
+                        </span>
                       </td>
                       <td style={{ padding: '12px 16px' }}>
                         {p.is_banned

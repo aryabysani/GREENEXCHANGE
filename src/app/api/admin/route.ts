@@ -39,6 +39,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true })
   }
 
+  // ── set-original-balance ──────────────────────────────────────
+  if (action === 'set-original-balance') {
+    if (typeof value !== 'number' || value < 0) return NextResponse.json({ error: 'Invalid value' }, { status: 400 })
+    const { data: prof } = await supabase.from('profiles').select('penalty').eq('id', id).single()
+    const penalty = prof?.penalty ?? 0
+    const carbon_balance = value - penalty
+    const { error } = await supabase.from('profiles').update({ original_balance: value, carbon_balance }).eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true, carbon_balance })
+  }
+
+  // ── set-penalty ───────────────────────────────────────────────
+  if (action === 'set-penalty') {
+    if (typeof value !== 'number' || value < 0) return NextResponse.json({ error: 'Invalid value' }, { status: 400 })
+    const { data: prof } = await supabase.from('profiles').select('original_balance').eq('id', id).single()
+    const original_balance = prof?.original_balance ?? 0
+    const carbon_balance = original_balance - value
+    const { error } = await supabase.from('profiles').update({ penalty: value, carbon_balance }).eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true, carbon_balance })
+  }
+
   // ── get-profiles ────────────────────────────────────────────
   if (action === 'get-profiles') {
     const { data, error } = await supabase
@@ -126,6 +148,8 @@ export async function POST(request: Request) {
       .from('profiles')
       .update({
         carbon_balance: null,
+        original_balance: null,
+        penalty: 0,
         is_banned: false,
       })
       .eq('id', id)
