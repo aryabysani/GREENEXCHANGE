@@ -84,7 +84,7 @@ export default function MyOrdersPage() {
       ] = await Promise.all([
         supabase.from('profiles').select('team_username, carbon_balance').eq('id', uid).single(),
         supabase.from('buy_orders').select('*').eq('buyer_id', uid).order('created_at', { ascending: false }),
-        supabase.from('listings').select('*').eq('seller_id', uid).in('status', ['live']).order('created_at', { ascending: false }),
+        supabase.from('listings').select('*').eq('seller_id', uid).in('status', ['live', 'partial']).order('created_at', { ascending: false }),
         supabase.from('transactions').select('id, credits_amount, price_per_credit, total_price, created_at, seller_id').eq('buyer_id', uid).order('created_at', { ascending: false }),
         supabase.from('transactions').select('id, credits_amount, price_per_credit, total_price, created_at, buyer_id').eq('seller_id', uid).order('created_at', { ascending: false }),
       ])
@@ -107,7 +107,6 @@ export default function MyOrdersPage() {
       setBuyTrades((buyTradeData ?? []).map(t => ({ ...t, sellerStall: stallMap[t.seller_id] ?? '—' })))
       setSellTrades((sellTradeData ?? []).map(t => ({ ...t, buyerStall: stallMap[t.buyer_id] ?? '—' })))
 
-      if (profileData?.carbon_balance != null && profileData.carbon_balance >= 0) setTab('sales')
       } catch { /* queries failed — still stop loading */ } finally { setLoading(false) }
     })
   }, [router])

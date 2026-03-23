@@ -12,7 +12,7 @@ async function matchBuyOrder(buyOrderId: string, buyerId: string, totalQty: numb
   const { data: sellOrders } = await admin
     .from('listings')
     .select('*')
-    .eq('status', 'live')
+    .in('status', ['live', 'partial'])
     .eq('is_hidden', false)
     .lte('price_per_credit', maxPrice)
     .order('price_per_credit', { ascending: true })
@@ -26,10 +26,11 @@ async function matchBuyOrder(buyOrderId: string, buyerId: string, totalQty: numb
     if (available <= 0) continue
     const fillQty = Math.min(remainingQty, available)
     const tradePrice = Number(sell.price_per_credit)
+    const newFilled = (sell.filled_quantity ?? 0) + fillQty
 
     await admin.from('listings').update({
-      filled_quantity: (sell.filled_quantity ?? 0) + fillQty,
-      status: (sell.filled_quantity ?? 0) + fillQty >= sell.credits_amount ? 'sold' : 'live',
+      filled_quantity: newFilled,
+      status: newFilled >= sell.credits_amount ? 'sold' : 'partial',
     }).eq('id', sell.id)
 
     const { data: bp } = await admin.from('profiles').select('carbon_balance').eq('id', buyerId).single()
@@ -37,6 +38,7 @@ async function matchBuyOrder(buyOrderId: string, buyerId: string, totalQty: numb
 
     await admin.from('transactions').insert({
       listing_id: sell.id,
+      buy_order_id: buyOrderId,
       buyer_id: buyerId,
       seller_id: sell.seller_id,
       credits_amount: fillQty,
@@ -55,11 +57,19 @@ async function matchBuyOrder(buyOrderId: string, buyerId: string, totalQty: numb
 
   // Auto-cancel remaining buy orders if buyer's balance is now non-negative
   const { data: finalProfile } = await admin.from('profiles').select('carbon_balance').eq('id', buyerId).single()
+  let cancelledOthers = false
   if (finalProfile?.carbon_balance != null && finalProfile.carbon_balance >= 0) {
-    await admin.from('buy_orders').update({ status: 'cancelled' }).eq('buyer_id', buyerId).in('status', ['open', 'partial'])
+    const { data: cancelled } = await admin
+      .from('buy_orders')
+      .update({ status: 'cancelled' })
+      .eq('buyer_id', buyerId)
+      .in('status', ['open', 'partial'])
+      .neq('id', buyOrderId)
+      .select('id')
+    cancelledOthers = (cancelled?.length ?? 0) > 0
   }
 
-  return filledSoFar
+  return { filled: filledSoFar, cancelledOthers }
 }
 
 export async function POST(request: Request) {
@@ -77,9 +87,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Trading is currently paused. Check back during trading hours.' }, { status: 403 })
   }
 
+  const { data: profile } = await admin.from('profiles').select('carbon_balance, is_banned').eq('id', user.id).single()
+  if (profile?.is_banned) return NextResponse.json({ error: 'Your account is banned.' }, { status: 403 })
+  if (profile?.carbon_balance == null) return NextResponse.json({ error: 'Your carbon balance has not been set by admin yet.' }, { status: 400 })
+  if (profile.carbon_balance >= 0) return NextResponse.json({ error: 'Your balance is not in deficit. Only teams with a carbon deficit can place buy orders.' }, { status: 400 })
+
   const { quantity, pricePerCredit } = await request.json()
   if (!quantity || quantity <= 0) return NextResponse.json({ error: 'Invalid quantity' }, { status: 400 })
   if (!pricePerCredit || pricePerCredit <= 0) return NextResponse.json({ error: 'Invalid price' }, { status: 400 })
+
+  const maxAllowed = Math.abs(profile.carbon_balance)
+  if (quantity > maxAllowed) return NextResponse.json({ error: `You can only buy up to ${maxAllowed} credits (your current deficit).` }, { status: 400 })
 
   const { data: buyOrder, error: insertError } = await admin.from('buy_orders').insert({
     buyer_id: user.id,
@@ -91,7 +109,7 @@ export async function POST(request: Request) {
 
   if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
 
-  const matched = await matchBuyOrder(buyOrder.id, user.id, quantity, pricePerCredit)
+  const { filled: matched, cancelledOthers } = await matchBuyOrder(buyOrder.id, user.id, quantity, pricePerCredit)
 
-  return NextResponse.json({ success: true, buyOrderId: buyOrder.id, matched })
+  return NextResponse.json({ success: true, buyOrderId: buyOrder.id, matched, cancelledOthers })
 }

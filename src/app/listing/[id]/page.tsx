@@ -113,16 +113,19 @@ export default function ListingDetailPage() {
 
   const statusColor: Record<string, string> = {
     live: '#4CAF50',
+    partial: '#FFB74D',
     sold: '#FF9800',
     removed: '#9E9E9E',
   }
   const statusBg: Record<string, string> = {
     live: '#E8F5E9',
+    partial: '#FFF8E1',
     sold: '#FFF3E0',
     removed: '#F5F5F5',
   }
   const statusEmoji: Record<string, string> = {
     live: '♻️',
+    partial: '⏳',
     sold: '🤝',
     removed: '🗑️',
   }

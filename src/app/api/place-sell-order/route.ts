@@ -39,6 +39,7 @@ async function matchSellOrder(listingId: string, sellerId: string, totalQty: num
 
     await admin.from('transactions').insert({
       listing_id: listingId,
+      buy_order_id: bo.id,
       buyer_id: bo.buyer_id,
       seller_id: sellerId,
       credits_amount: fillQty,
@@ -59,7 +60,7 @@ async function matchSellOrder(listingId: string, sellerId: string, totalQty: num
   if (filledSoFar > 0) {
     await admin.from('listings').update({
       filled_quantity: filledSoFar,
-      status: filledSoFar >= totalQty ? 'sold' : 'live',
+      status: filledSoFar >= totalQty ? 'sold' : 'partial',
     }).eq('id', listingId)
   }
 
@@ -85,7 +86,8 @@ export async function POST(request: Request) {
   if (!quantity || quantity <= 0) return NextResponse.json({ error: 'Invalid quantity' }, { status: 400 })
   if (!pricePerCredit || pricePerCredit <= 0) return NextResponse.json({ error: 'Invalid price' }, { status: 400 })
 
-  const { data: profile } = await admin.from('profiles').select('carbon_balance').eq('id', user.id).single()
+  const { data: profile } = await admin.from('profiles').select('carbon_balance, is_banned').eq('id', user.id).single()
+  if (profile?.is_banned) return NextResponse.json({ error: 'Your account is banned.' }, { status: 403 })
   if (profile?.carbon_balance == null) return NextResponse.json({ error: 'Your carbon balance has not been set by admin yet.' }, { status: 400 })
   if (profile.carbon_balance < quantity) return NextResponse.json({ error: `You only have ${profile.carbon_balance} credits available.` }, { status: 400 })
 

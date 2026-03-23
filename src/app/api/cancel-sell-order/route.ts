@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
   if (fetchErr || !listing) return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
   if (listing.seller_id !== user.id) return NextResponse.json({ error: 'Not your listing' }, { status: 403 })
-  if (listing.status !== 'live') return NextResponse.json({ error: 'Listing cannot be cancelled' }, { status: 400 })
+  if (!['live', 'partial'].includes(listing.status)) return NextResponse.json({ error: 'Listing cannot be cancelled' }, { status: 400 })
 
   // Mark listing as removed
   const { error: updateErr } = await admin

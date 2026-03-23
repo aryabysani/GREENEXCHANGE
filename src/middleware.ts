@@ -35,7 +35,6 @@ export async function middleware(request: NextRequest) {
     path.startsWith('/admin') ||
     path.startsWith('/auth') ||
     path.startsWith('/banned') ||
-    path.startsWith('/onboarding') ||
     path.startsWith('/api') ||
     path.startsWith('/_next')
 

@@ -13,11 +13,12 @@ export default function BuyPage() {
   const [authLoading, setAuthLoading] = useState(true)
   const [tradingActive, setTradingActive] = useState(true)
 
+  const [userId, setUserId] = useState<string | null>(null)
   const [quantity, setQuantity] = useState('')
   const [pricePerCredit, setPricePerCredit] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [result, setResult] = useState<{ matched: number; total: number } | null>(null)
+  const [result, setResult] = useState<{ matched: number; total: number; cancelledOthers: boolean } | null>(null)
 
   const totalCost = quantity && pricePerCredit
     ? (parseFloat(quantity) * parseFloat(pricePerCredit)).toFixed(2)
@@ -27,6 +28,7 @@ export default function BuyPage() {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data, error }) => {
       if (error || !data.user) { router.push('/auth'); return }
+      setUserId(data.user.id)
       supabase.from('profiles').select('team_username, carbon_balance').eq('id', data.user.id).single()
         .then(({ data: p }) => setProfile(p))
         .catch(() => {})
@@ -57,10 +59,16 @@ export default function BuyPage() {
     const json = await res.json()
     if (!res.ok) { setError(json.error ?? 'Something went wrong.'); setLoading(false); return }
 
-    setResult({ matched: json.matched ?? 0, total: qty })
+    setResult({ matched: json.matched ?? 0, total: qty, cancelledOthers: json.cancelledOthers ?? false })
     setQuantity('')
     setPricePerCredit('')
     setLoading(false)
+    // Refresh balance so displayed balance reflects the match
+    if (userId) {
+      const supabase = createClient()
+      supabase.from('profiles').select('team_username, carbon_balance').eq('id', userId).single()
+        .then(({ data: p }) => { if (p) setProfile(p) })
+    }
   }
 
   if (authLoading) return (
@@ -111,11 +119,28 @@ export default function BuyPage() {
                 {profile.carbon_balance != null && <span style={{ fontSize: '0.9rem', fontWeight: 400, color: '#CE93D8' }}> credits</span>}
               </div>
               {profile.carbon_balance == null && <div style={{ color: '#FFCDD2', fontSize: '0.78rem', marginTop: 4 }}>Contact admin to set your balance</div>}
-              <div style={{ color: '#CE93D8', fontSize: '0.75rem', marginTop: 6 }}>
-                <strong style={{ color: '#FF5252' }}>Deficit</strong> = you owe credits = buy to offset.
-              </div>
+              {profile.carbon_balance != null && profile.carbon_balance < 0 && (
+                <div style={{ color: '#FF8A80', fontSize: '0.78rem', marginTop: 4 }}>
+                  You can buy up to <strong style={{ color: '#FF5252' }}>{Math.abs(profile.carbon_balance)} credits</strong> to offset your deficit.
+                </div>
+              )}
+              {profile.carbon_balance != null && profile.carbon_balance >= 0 && (
+                <div style={{ color: '#A5D6A7', fontSize: '0.78rem', marginTop: 4 }}>
+                  Your balance is not in deficit — no credits needed.
+                </div>
+              )}
             </div>
             <div style={{ color: '#CE93D8', fontSize: '0.82rem', textAlign: 'right' }}>{profile.team_username}</div>
+          </div>
+        )}
+
+        {profile?.carbon_balance != null && profile.carbon_balance >= 0 && (
+          <div style={{ background: '#E8F5E9', border: '1.5px solid #4CAF50', borderRadius: 14, padding: '16px 20px', marginBottom: 20, textAlign: 'center' }}>
+            <div style={{ fontSize: 28, marginBottom: 6 }}>✅</div>
+            <div style={{ fontWeight: 700, color: '#1A3C2B', fontSize: '1rem' }}>You have no deficit</div>
+            <p style={{ margin: '6px 0 0', color: '#2D6A4F', fontSize: '0.87rem' }}>
+              Your carbon balance is <strong>{profile.carbon_balance}</strong> — only teams in deficit can place buy orders.
+            </p>
           </div>
         )}
 
@@ -134,6 +159,11 @@ export default function BuyPage() {
                 No matching sell orders right now. Your bid for <strong>{result.total} credits</strong> is live in the order book — you&apos;ll be matched automatically when a seller posts at your price or lower.
               </p>
             )}
+            {result.cancelledOthers && (
+              <p style={{ margin: '8px 0 0', color: '#E65100', fontSize: '0.85rem', fontWeight: 600 }}>
+                ⚠️ Your other open buy orders were automatically cancelled because your deficit has been fully offset.
+              </p>
+            )}
           </div>
         )}
 
@@ -148,8 +178,10 @@ export default function BuyPage() {
             <div>
               <label style={{ display: 'block', marginBottom: 6, fontSize: '0.875rem', fontWeight: 600, color: '#1A3C2B' }}>Credits to Buy *</label>
               <input
-                type="number" min="1" value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="e.g. 20" required
-                disabled={!tradingActive}
+                type="number" min="1"
+                max={profile?.carbon_balance != null && profile.carbon_balance < 0 ? Math.abs(profile.carbon_balance) : undefined}
+                value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="e.g. 20" required
+                disabled={!tradingActive || (profile?.carbon_balance != null && profile.carbon_balance >= 0)}
                 style={{ width: '100%', padding: '12px 14px', border: '1.5px solid #C8E6C9', borderRadius: 10, fontSize: '0.95rem', background: tradingActive ? '#fff' : '#f5f5f5', color: '#1A3C2B', outline: 'none', boxSizing: 'border-box' }}
                 onFocus={e => (e.target.style.borderColor = '#7B1FA2')}
                 onBlur={e => (e.target.style.borderColor = '#C8E6C9')}
@@ -191,9 +223,9 @@ export default function BuyPage() {
 
             <button
               type="submit"
-              disabled={loading || !tradingActive}
+              disabled={loading || !tradingActive || (profile?.carbon_balance != null && profile.carbon_balance >= 0)}
               style={{
-                background: (!tradingActive || loading) ? '#ccc' : '#7B1FA2',
+                background: (!tradingActive || loading || (profile?.carbon_balance != null && profile.carbon_balance >= 0)) ? '#ccc' : '#7B1FA2',
                 color: '#fff', border: 'none', borderRadius: 12,
                 padding: '14px', fontSize: '1rem', fontWeight: 700,
                 cursor: (!tradingActive || loading) ? 'not-allowed' : 'pointer',

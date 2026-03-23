@@ -78,7 +78,7 @@ export default function HomePage() {
     const tradingInterval = setInterval(checkTrading, 10000)
 
     const fetchSellOrders = async () => {
-      const { data } = await supabase.from('listings').select('*').eq('status', 'live').eq('is_hidden', false).order('price_per_credit', { ascending: true })
+      const { data } = await supabase.from('listings').select('*').in('status', ['live', 'partial']).eq('is_hidden', false).order('price_per_credit', { ascending: true })
       const orders = data ?? []
       const ids = Array.from(new Set(orders.map((o: Record<string, string>) => o.seller_id).filter(Boolean)))
       if (ids.length > 0) {

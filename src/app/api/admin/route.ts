@@ -73,12 +73,12 @@ export async function POST(request: Request) {
       .eq('id', id)
     if (profileErr) return NextResponse.json({ error: profileErr.message }, { status: 500 })
 
-    // Hide all live listings from this stall
+    // Hide all live/partial listings from this stall
     await supabase
       .from('listings')
       .update({ is_hidden: true })
       .eq('seller_id', id)
-      .eq('status', 'live')
+      .in('status', ['live', 'partial'])
 
     // Kick the user out of all active sessions
     await revokeUserSessions(id)
@@ -171,7 +171,7 @@ export async function POST(request: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     // Refund unfilled credits back to seller if listing was live
-    if (listing.status === 'live') {
+    if (['live', 'partial'].includes(listing.status)) {
       const unfilledCredits = listing.credits_amount - (listing.filled_quantity ?? 0)
       if (unfilledCredits > 0) {
         const { data: sellerProfile } = await supabase.from('profiles').select('carbon_balance').eq('id', listing.seller_id).single()
