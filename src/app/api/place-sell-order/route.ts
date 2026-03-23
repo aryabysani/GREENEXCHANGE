@@ -14,7 +14,6 @@ async function matchSellOrder(listingId: string, sellerId: string, totalQty: num
     .select('*')
     .in('status', ['open', 'partial'])
     .gte('price_per_credit', askPrice)
-    .order('price_per_credit', { ascending: false })
     .order('created_at', { ascending: true })
 
   let remainingQty = totalQty
