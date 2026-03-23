@@ -56,8 +56,13 @@ export default function HowItWorksPage() {
               <div style={{ color: '#9E6B6B', fontSize: '0.87rem', lineHeight: 1.65 }}>You went over budget. Buy credits from surplus teams to offset your footprint.</div>
             </div>
           </div>
-          <div style={{ padding: '12px 16px', background: 'rgba(76,175,80,0.05)', border: '1px solid rgba(76,175,80,0.15)', borderRadius: 10, color: '#6B9E7E', fontSize: '0.85rem' }}>
-            <strong style={{ color: '#A8D5B5' }}>Final Balance = Original Allocation − Penalty.</strong> The admin sets your allocation and any penalty. Your final balance is used for all trading.
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ padding: '12px 16px', background: 'rgba(76,175,80,0.05)', border: '1px solid rgba(76,175,80,0.15)', borderRadius: 10, color: '#6B9E7E', fontSize: '0.85rem' }}>
+              <strong style={{ color: '#A8D5B5' }}>Carbon Balance = Carbon Limit − Carbon Footprint.</strong> If your footprint is less than your limit, you have a surplus. If more, you have a deficit.
+            </div>
+            <div style={{ padding: '12px 16px', background: 'rgba(76,175,80,0.05)', border: '1px solid rgba(76,175,80,0.15)', borderRadius: 10, color: '#6B9E7E', fontSize: '0.85rem' }}>
+              <strong style={{ color: '#A8D5B5' }}>Final Tradeable Balance = Original Allocation − Penalty.</strong> The admin sets your allocation and any penalty. Your final balance is used for all trading.
+            </div>
           </div>
         </div>
 
@@ -281,7 +286,7 @@ export default function HowItWorksPage() {
         {/* Key Rules */}
         <div style={{ background: '#161B22', border: '1px solid #1E3A2F', borderRadius: 20, padding: '28px 32px', marginBottom: 40 }}>
           <h3 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, color: '#fff', marginBottom: 16, fontSize: '1.15rem' }}>
-            📌 Key Rules
+            📌 Key Details
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[
