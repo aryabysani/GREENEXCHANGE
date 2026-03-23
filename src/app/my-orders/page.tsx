@@ -290,10 +290,13 @@ export default function MyOrdersPage() {
                   <div style={{ minWidth: 520, display: 'grid', gridTemplateColumns: '100px 1fr 1fr 1fr 1fr 80px', padding: '10px 20px', borderBottom: '1px solid #2A1A3E' }}>
                     {['Status', 'Qty', 'Filled', 'Bid Price', 'Placed', ''].map(h => <span key={h} style={cell}>{h}</span>)}
                   </div>
-                  {buyOrders.map((o, i) => (
+                  {buyOrders.map((o, i) => {
+                    const isBoPartiallyCancelled = o.status === 'cancelled' && (o.filled_quantity ?? 0) > 0
+                    const boLabel = isBoPartiallyCancelled ? 'PART. CANCELLED' : o.status.toUpperCase()
+                    return (
                     <div key={o.id} style={{ minWidth: 520, display: 'grid', gridTemplateColumns: '100px 1fr 1fr 1fr 1fr 80px', padding: '13px 20px', borderBottom: i < buyOrders.length - 1 ? '1px solid #1A1A2E' : 'none', alignItems: 'center' }}>
-                      <span style={{ background: BO_BG[o.status] ?? '#F5F5F5', color: BO_COLOR[o.status] ?? '#9E9E9E', borderRadius: 6, padding: '2px 8px', fontSize: '0.7rem', fontWeight: 700, width: 'fit-content' }}>
-                        {o.status.toUpperCase()}
+                      <span style={{ background: BO_BG[o.status] ?? '#F5F5F5', color: BO_COLOR[o.status] ?? '#9E9E9E', borderRadius: 6, padding: '2px 8px', fontSize: '0.68rem', fontWeight: 700, width: 'fit-content' }}>
+                        {boLabel}
                       </span>
                       <span style={{ color: '#E1BEE7' }}>{o.quantity}</span>
                       <span style={{ color: '#CE93D8' }}>{o.filled_quantity}</span>
@@ -309,7 +312,7 @@ export default function MyOrdersPage() {
                         )}
                       </div>
                     </div>
-                  ))}
+                  )})}
                   </div>
                 </div>
               )}
