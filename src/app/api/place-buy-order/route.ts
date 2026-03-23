@@ -27,10 +27,11 @@ async function matchBuyOrder(buyOrderId: string, buyerId: string, totalQty: numb
     const tradePrice = Number(sell.price_per_credit)
     const newFilled = (sell.filled_quantity ?? 0) + fillQty
 
-    await admin.from('listings').update({
-      filled_quantity: newFilled,
-      status: newFilled >= sell.credits_amount ? 'sold' : 'partial',
-    }).eq('id', sell.id)
+    await admin.from('listings').update(
+      newFilled >= sell.credits_amount
+        ? { filled_quantity: newFilled, status: 'sold' }
+        : { filled_quantity: newFilled }
+    ).eq('id', sell.id)
 
     const { data: bp } = await admin.from('profiles').select('carbon_balance').eq('id', buyerId).single()
     await admin.from('profiles').update({ carbon_balance: (bp?.carbon_balance ?? 0) + fillQty }).eq('id', buyerId)

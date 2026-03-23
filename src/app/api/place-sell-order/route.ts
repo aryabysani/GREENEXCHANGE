@@ -58,10 +58,11 @@ async function matchSellOrder(listingId: string, sellerId: string, totalQty: num
 
   const filledSoFar = totalQty - remainingQty
   if (filledSoFar > 0) {
-    await admin.from('listings').update({
-      filled_quantity: filledSoFar,
-      status: filledSoFar >= totalQty ? 'sold' : 'partial',
-    }).eq('id', listingId)
+    await admin.from('listings').update(
+      filledSoFar >= totalQty
+        ? { filled_quantity: filledSoFar, status: 'sold' }
+        : { filled_quantity: filledSoFar }
+    ).eq('id', listingId)
 
     // Deduct only what was actually sold from seller's balance
     const { data: sp } = await admin.from('profiles').select('carbon_balance').eq('id', sellerId).single()
