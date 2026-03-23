@@ -62,6 +62,8 @@ export default function AdminPage() {
   const [tradingActive, setTradingActive] = useState(false)
   const [tradingLoading, setTradingLoading] = useState(false)
   const [exportLoading, setExportLoading] = useState(false)
+  const [editingBalance, setEditingBalance] = useState<string | null>(null)
+  const [editingValue, setEditingValue] = useState('')
   const [selectedTeam, setSelectedTeam] = useState<{ id: string; team_username: string } | null>(null)
   const [teamTxns, setTeamTxns] = useState<TeamTransaction[]>([])
   const [teamTxnsLoading, setTeamTxnsLoading] = useState(false)
@@ -84,11 +86,11 @@ export default function AdminPage() {
     setTradingLoading(false)
   }
 
-  const call = async (action: string, id?: string) => {
+  const call = async (action: string, id?: string, value?: number) => {
     const res = await fetch('/api/admin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ secret: ADMIN_SECRET, action, id }),
+      body: JSON.stringify({ secret: ADMIN_SECRET, action, id, value }),
     })
     return res.json()
   }
@@ -144,6 +146,21 @@ export default function AdminPage() {
     a.click()
     URL.revokeObjectURL(url)
     setExportLoading(false)
+  }
+
+  const saveBalance = async (id: string) => {
+    const val = parseInt(editingValue, 10)
+    if (isNaN(val) || val < 0) { setMsg('❌ Invalid balance value'); setEditingBalance(null); return }
+    setActionLoading(id + 'balance')
+    const { success, error } = await call('set-balance', id, val)
+    if (success) {
+      setMsg(`✅ Balance updated to ${val}`)
+      setProfiles(prev => prev.map(p => p.id === id ? { ...p, carbon_balance: val } : p))
+    } else {
+      setMsg(`❌ ${error}`)
+    }
+    setEditingBalance(null)
+    setActionLoading(null)
   }
 
   const openTeamTransactions = async (id: string, team_username: string) => {
@@ -323,9 +340,29 @@ export default function AdminPage() {
                       <td style={{ padding: '12px 16px', color: '#6B7280', fontFamily: 'monospace', fontSize: '0.85rem' }}>{p.username}</td>
                       <td style={{ padding: '12px 16px', fontWeight: 600, color: '#1A3C2B' }}>{p.team_username}</td>
                       <td style={{ padding: '12px 16px' }}>
-                        <span style={{ background: '#E8F5E9', color: '#2D6A4F', borderRadius: 6, padding: '2px 8px', fontWeight: 700 }}>
-                          ♻️ {p.carbon_balance}
-                        </span>
+                        {editingBalance === p.id ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <input
+                              type="number"
+                              min={0}
+                              value={editingValue}
+                              onChange={e => setEditingValue(e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Enter') saveBalance(p.id); if (e.key === 'Escape') setEditingBalance(null) }}
+                              autoFocus
+                              style={{ width: 72, padding: '3px 7px', borderRadius: 6, border: '1.5px solid #4CAF50', fontSize: '0.85rem', fontWeight: 700, color: '#1A3C2B', outline: 'none' }}
+                            />
+                            <button onClick={() => saveBalance(p.id)} disabled={actionLoading === p.id + 'balance'} style={{ background: '#4CAF50', color: '#fff', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>✓</button>
+                            <button onClick={() => setEditingBalance(null)} style={{ background: '#F5F5F5', color: '#9E9E9E', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontSize: '0.8rem' }}>✕</button>
+                          </div>
+                        ) : (
+                          <span
+                            onClick={() => { setEditingBalance(p.id); setEditingValue(String(p.carbon_balance ?? 0)) }}
+                            title="Click to edit"
+                            style={{ background: '#E8F5E9', color: '#2D6A4F', borderRadius: 6, padding: '2px 8px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                          >
+                            ♻️ {p.carbon_balance ?? '—'} <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>✏️</span>
+                          </span>
+                        )}
                       </td>
                       <td style={{ padding: '12px 16px' }}>
                         {p.is_banned

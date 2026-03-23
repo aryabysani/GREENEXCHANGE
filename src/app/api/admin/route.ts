@@ -25,10 +25,18 @@ async function revokeUserSessions(userId: string) {
 
 export async function POST(request: Request) {
   const supabase = makeClient()
-  const { secret, action, id } = await request.json()
+  const { secret, action, id, value } = await request.json()
 
   if (secret !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // ── set-balance ──────────────────────────────────────────────
+  if (action === 'set-balance') {
+    if (typeof value !== 'number' || value < 0) return NextResponse.json({ error: 'Invalid value' }, { status: 400 })
+    const { error } = await supabase.from('profiles').update({ carbon_balance: value }).eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true })
   }
 
   // ── get-profiles ────────────────────────────────────────────
