@@ -152,9 +152,21 @@ export default function AdminPage() {
       ], 'greencredits-transactions')
     } else if (type === 'profiles') {
       const rows: Profile[] = data ?? []
+      const { data: txData } = await call('get-transactions')
+      const txns: Transaction[] = (txData ?? []).filter((t: Transaction) => !t.reversed)
+      // build per-team stats keyed by team_username
+      const stats: Record<string, { sells: number; buys: number; creditsSold: number; creditsBought: number }> = {}
+      for (const p of rows) stats[p.team_username] = { sells: 0, buys: 0, creditsSold: 0, creditsBought: 0 }
+      for (const t of txns) {
+        if (stats[t.seller_username]) { stats[t.seller_username].sells++; stats[t.seller_username].creditsSold += t.credits_amount }
+        if (stats[t.buyer_username]) { stats[t.buyer_username].buys++; stats[t.buyer_username].creditsBought += t.credits_amount }
+      }
       downloadCsv([
-        ['Team Username', 'Login Username', 'Orig. Balance', 'Penalty', 'Final Balance', 'Status'],
-        ...rows.map(p => [p.team_username, p.username, String(p.original_balance ?? ''), String(p.penalty ?? 0), String(p.carbon_balance ?? ''), p.is_banned ? 'Banned' : 'Active']),
+        ['Team Username', 'Login Username', 'Orig. Balance', 'Penalty', 'Final Balance', 'Status', '# Sells', 'Credits Sold', '# Buys', 'Credits Bought'],
+        ...rows.map(p => {
+          const s = stats[p.team_username] ?? { sells: 0, buys: 0, creditsSold: 0, creditsBought: 0 }
+          return [p.team_username, p.username, String(p.original_balance ?? ''), String(p.penalty ?? 0), String(p.carbon_balance ?? ''), p.is_banned ? 'Banned' : 'Active', String(s.sells), String(s.creditsSold), String(s.buys), String(s.creditsBought)]
+        }),
       ], 'greencredits-teams')
     } else if (type === 'listings') {
       const rows: Listing[] = data ?? []
@@ -639,7 +651,7 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {teamTxns.map((t, i) => (
+                    {teamTxns.slice(0, 3).map((t, i) => (
                       <tr key={t.id} style={{ borderTop: '1px solid #E8F5E9', background: i % 2 === 0 ? '#fff' : '#FAFFFE' }}>
                         <td style={{ padding: '11px 16px' }}>
                           <span style={{
@@ -671,6 +683,18 @@ export default function AdminPage() {
                 </table>
               )}
             </div>
+            {teamTxns.length > 3 && (
+              <div style={{ padding: '14px 24px', borderTop: '1px solid #E8F5E9', textAlign: 'center' }}>
+                <a
+                  href={`/admin/team/${selectedTeam.id}?name=${encodeURIComponent(selectedTeam.team_username)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: '#4CAF50', fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none' }}
+                >
+                  View all {teamTxns.length} trades →
+                </a>
+              </div>
+            )}
           </div>
         </div>
       )}
