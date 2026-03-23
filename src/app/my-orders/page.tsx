@@ -66,6 +66,7 @@ export default function MyOrdersPage() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<{ team_username: string; carbon_balance: number | null } | null>(null)
   const [actionId, setActionId] = useState<string | null>(null)
+  const [cancelError, setCancelError] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -113,32 +114,36 @@ export default function MyOrdersPage() {
 
   const cancelBuyOrder = async (orderId: string) => {
     if (!confirm('Cancel this buy order?')) return
+    setCancelError(null)
     setActionId(orderId)
     const res = await fetch('/api/cancel-buy-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orderId }),
     })
+    const json = await res.json()
     if (res.ok) {
       setBuyOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'cancelled' } : o))
+    } else {
+      setCancelError(json.error ?? 'Failed to cancel order.')
     }
     setActionId(null)
   }
 
   const cancelSellOrder = async (listingId: string) => {
-    if (!confirm('Cancel this sell order? Unfilled credits will be refunded to your balance.')) return
+    if (!confirm('Cancel this sell order?')) return
+    setCancelError(null)
     setActionId(listingId)
     const res = await fetch('/api/cancel-sell-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ listingId }),
     })
+    const json = await res.json()
     if (res.ok) {
-      const json = await res.json()
       setSellOrders(prev => prev.filter(o => o.id !== listingId))
-      if (json.unfilledCredits > 0) {
-        setProfile(prev => prev ? { ...prev, carbon_balance: (prev.carbon_balance ?? 0) + json.unfilledCredits } : prev)
-      }
+    } else {
+      setCancelError(json.error ?? 'Failed to cancel listing.')
     }
     setActionId(null)
   }
@@ -241,6 +246,12 @@ export default function MyOrdersPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {cancelError && (
+          <div style={{ background: '#2A0A0A', border: '1px solid #FF525240', borderRadius: 10, padding: '10px 16px', marginBottom: 16, color: '#FF5252', fontSize: '0.88rem' }}>
+            ⚠️ {cancelError}
           </div>
         )}
 
