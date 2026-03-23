@@ -25,17 +25,12 @@ export default function SellPage() {
     : null
 
   useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data, error }) => {
-      if (error || !data.user) { router.push('/auth'); return }
-      setUserId(data.user.id)
-      supabase.from('profiles').select('team_username, carbon_balance, is_banned').eq('id', data.user.id).single()
-        .then(({ data: p }) => {
-          if (p?.is_banned) { router.push('/banned'); return }
-          setProfile(p)
-        })
-        .catch(() => {})
-        .finally(() => setAuthLoading(false))
+    fetch('/api/me', { cache: 'no-store' }).then(r => r.json()).then(({ user }) => {
+      if (!user) { router.push('/auth'); return }
+      if (user.is_banned) { router.push('/banned'); return }
+      setUserId(user.id)
+      setProfile({ team_username: user.team_username, carbon_balance: user.carbon_balance })
+      setAuthLoading(false)
     })
     const checkTrading = () =>
       fetch(`/api/trading-status?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(d => setTradingActive(d.active !== false))

@@ -62,6 +62,7 @@ export default function AdminPage() {
   const [tradingActive, setTradingActive] = useState(false)
   const [tradingLoading, setTradingLoading] = useState(false)
   const [exportLoading, setExportLoading] = useState(false)
+  const [showExportMenu, setShowExportMenu] = useState(false)
   const [editingBalance, setEditingBalance] = useState<string | null>(null)
   const [editingValue, setEditingValue] = useState('')
   const [selectedTeam, setSelectedTeam] = useState<{ id: string; team_username: string } | null>(null)
@@ -119,32 +120,52 @@ export default function AdminPage() {
     setActionLoading(null)
   }
 
-  const handleExportTransactions = async () => {
-    setExportLoading(true)
-    const { data } = await call('get-transactions')
-    const rows: Transaction[] = data ?? []
-
-    const headers = ['#', 'Date & Time', 'Seller', 'Buyer', 'Credits', 'Price/Credit (₹)', 'Total (₹)']
-    const csvRows = [
-      headers.join(','),
-      ...rows.map((t, i) => [
-        rows.length - i,
-        new Date(t.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-        t.seller_username,
-        t.buyer_username,
-        t.credits_amount,
-        Number(t.price_per_credit).toFixed(0),
-        t.total_price != null ? Number(t.total_price).toFixed(0) : '',
-      ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
-    ]
-
-    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+  const downloadCsv = (rows: string[][], filename: string) => {
+    const blob = new Blob([rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `greencredits-transactions-${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `${filename}-${new Date().toISOString().slice(0, 10)}.csv`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  const handleExport = async (type: 'transactions' | 'profiles' | 'listings') => {
+    setExportLoading(true)
+    setShowExportMenu(false)
+    const { data } = await call(`get-${type}`)
+
+    if (type === 'transactions') {
+      const rows: Transaction[] = data ?? []
+      downloadCsv([
+        ['#', 'Date & Time', 'Seller', 'Buyer', 'Credits', 'Price/Credit (₹)', 'Total (₹)', 'Reversed'],
+        ...rows.map((t, i) => [
+          String(rows.length - i),
+          new Date(t.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+          t.seller_username, t.buyer_username,
+          String(t.credits_amount), Number(t.price_per_credit).toFixed(0),
+          t.total_price != null ? Number(t.total_price).toFixed(0) : '',
+          t.reversed ? 'Yes' : 'No',
+        ]),
+      ], 'greencredits-transactions')
+    } else if (type === 'profiles') {
+      const rows: Profile[] = data ?? []
+      downloadCsv([
+        ['Team Username', 'Login Username', 'Carbon Balance', 'Status'],
+        ...rows.map(p => [p.team_username, p.username, String(p.carbon_balance ?? ''), p.is_banned ? 'Banned' : 'Active']),
+      ], 'greencredits-teams')
+    } else if (type === 'listings') {
+      const rows: Listing[] = data ?? []
+      downloadCsv([
+        ['Seller', 'Credits', 'Price/Credit (₹)', 'Total (₹)', 'Status', 'Date'],
+        ...rows.map(l => [
+          l.profiles?.team_username ?? '—', String(l.credits_amount),
+          Number(l.price_per_credit).toFixed(0), Number(l.total_price).toFixed(0),
+          l.status, new Date(l.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+        ]),
+      ], 'greencredits-listings')
+    }
+
     setExportLoading(false)
   }
 
@@ -262,13 +283,34 @@ export default function AdminPage() {
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff', display: 'inline-block' }} />
             {tradingLoading ? '...' : tradingActive ? 'Pause Trading' : 'Open Trading'}
           </button>
-          <button
-            onClick={handleExportTransactions}
-            disabled={exportLoading}
-            style={{ background: 'rgba(255,255,255,0.1)', color: '#A8D5B5', border: '1px solid rgba(168,213,181,0.3)', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
-          >
-            {exportLoading ? '⏳ Exporting...' : '⬇️ Export CSV'}
-          </button>
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowExportMenu(v => !v)}
+              disabled={exportLoading}
+              style={{ background: 'rgba(255,255,255,0.1)', color: '#A8D5B5', border: '1px solid rgba(168,213,181,0.3)', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
+            >
+              {exportLoading ? '⏳ Exporting...' : '⬇️ Export CSV ▾'}
+            </button>
+            {showExportMenu && (
+              <div style={{ position: 'absolute', right: 0, top: '110%', background: '#fff', border: '1.5px solid #C8E6C9', borderRadius: 12, overflow: 'hidden', zIndex: 100, minWidth: 160, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
+                {([
+                  { key: 'transactions', label: '🤝 Transactions' },
+                  { key: 'profiles', label: '👥 Teams' },
+                  { key: 'listings', label: '📋 Listings' },
+                ] as const).map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => handleExport(key)}
+                    style={{ display: 'block', width: '100%', padding: '10px 16px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.88rem', color: '#1A3C2B', fontWeight: 600 }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#F0F7F1')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             onClick={() => setAuthed(false)}
             style={{ background: 'rgba(255,255,255,0.1)', color: '#A8D5B5', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: '0.85rem' }}

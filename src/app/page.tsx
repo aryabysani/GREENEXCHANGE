@@ -67,19 +67,12 @@ export default function HomePage() {
   useEffect(() => {
     const supabase = createClient()
 
-    // Check user balance for CTA
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        supabase.from('profiles').select('carbon_balance, is_banned').eq('id', data.user.id).single()
-          .then(({ data: p }) => {
-            if (p?.is_banned) { window.location.href = '/banned'; return }
-            setIsLoggedIn(true)
-            setUserBalance(p?.carbon_balance ?? 0)
-          })
-      } else {
-        setIsLoggedIn(false)
-        setUserBalance(null)
-      }
+    // Check user session + ban status via server route (bypasses RLS)
+    fetch('/api/me', { cache: 'no-store' }).then(r => r.json()).then(({ user }) => {
+      if (!user) { setIsLoggedIn(false); setUserBalance(null); return }
+      if (user.is_banned) { window.location.href = '/banned'; return }
+      setIsLoggedIn(true)
+      setUserBalance(user.carbon_balance ?? 0)
     })
 
     // Trading status — poll every 10s so toggle is reflected without refresh
