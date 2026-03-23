@@ -276,6 +276,11 @@ export default function HomePage() {
 
       {/* Order Book */}
       <div style={{ maxWidth: 1100, margin: '24px auto', padding: '0 16px', width: '100%' }}>
+        {tradingActive && (
+          <div style={{ textAlign: 'right', marginBottom: 8 }}>
+            <span style={{ color: '#6B7280', fontSize: '0.78rem' }}>⚠️ Refresh the page to see new orders</span>
+          </div>
+        )}
         <div className="order-book-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
           {/* SELL ORDERS (Asks) */}
