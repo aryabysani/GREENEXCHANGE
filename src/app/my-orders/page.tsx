@@ -364,7 +364,8 @@ export default function MyOrdersPage() {
                     {['Status', 'Credits', 'Filled', 'Ask Price', 'Posted', ''].map(h => <span key={h} style={cell}>{h}</span>)}
                   </div>
                   {sellOrders.map((o, i) => {
-                    const statusLabel: Record<string, string> = { live: 'LIVE', partial: 'PARTIAL', sold: 'SOLD', removed: 'CANCELLED' }
+                    const isPartiallyCancelled = o.status === 'removed' && (o.filled_quantity ?? 0) > 0
+                    const statusLabel: Record<string, string> = { live: 'LIVE', partial: 'PARTIAL', sold: 'SOLD', removed: isPartiallyCancelled ? 'PART. CANCELLED' : 'CANCELLED' }
                     const statusColor: Record<string, string> = { live: '#4CAF50', partial: '#FFB74D', sold: '#9E9E9E', removed: '#FF5252' }
                     const statusBg: Record<string, string> = { live: '#1A3C2B', partial: '#2A1A00', sold: '#1A1A1A', removed: '#2A0A0A' }
                     const canCancel = o.status === 'live' || o.status === 'partial'
