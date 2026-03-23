@@ -42,18 +42,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/auth', request.url))
   }
 
-  if (user && !isPublicPath) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('is_banned')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.is_banned) {
-      return NextResponse.redirect(new URL('/banned', request.url))
-    }
-  }
-
   return supabaseResponse
 }
 
