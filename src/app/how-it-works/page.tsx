@@ -48,7 +48,7 @@ export default function HowItWorksPage() {
             </div>
           </div>
           <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: 8, color: '#6B7280', fontSize: '0.82rem' }}>
-            <strong style={{ color: '#A8D5B5' }}>Balance = Emissions Allowed − Your Carbon Footprint.</strong> Admin sets your balance. You can view it on your profile.
+            <strong style={{ color: '#A8D5B5' }}>Final Balance = Original Allocation − Penalty.</strong> The admin sets your original allocation and applies any penalty. Your final tradeable balance is shown on the homepage and profile.
           </div>
         </div>
 
@@ -89,7 +89,7 @@ export default function HowItWorksPage() {
               title: 'Log In',
               color: '#6B9E7E',
               accent: '#1E3A2F',
-              desc: 'Use the email and password assigned to your team by the admin. Your carbon balance is pre-set — no sign-up needed.',
+              desc: 'Use the username (e.g. stall01) and password assigned to your team by the admin. Your carbon balance is pre-set — no sign-up needed.',
             },
             {
               num: '02',
@@ -105,7 +105,7 @@ export default function HowItWorksPage() {
               title: 'Place Your Order',
               color: '#CE93D8',
               accent: '#2A1A3E',
-              desc: 'Deficit team? Go to Buy Credits — enter quantity and the maximum price per credit you\'re willing to pay. Surplus team? Go to Sell Credits — enter quantity and the minimum price per credit you\'ll accept.',
+              desc: 'Deficit team? Go to Buy Credits — enter quantity and the maximum price per credit you\'re willing to pay. Surplus team? Go to Sell Credits — enter quantity and the minimum price per credit you\'ll accept. When you place a sell order, those credits are immediately locked (escrowed) from your balance until the order fills or is cancelled.',
             },
             {
               num: '04',
@@ -129,7 +129,7 @@ export default function HowItWorksPage() {
               title: 'Track in My Orders',
               color: '#6B9E7E',
               accent: '#1E3A2F',
-              desc: 'Visit My Orders to see all your open bids, live sell listings, and completed trades with full price history. You can cancel any open or partial order at any time — unfilled sell credits are refunded to your balance.',
+              desc: 'Visit My Orders to see all your open bids, live sell listings, and completed trades with full price history. You can cancel any open or partial order at any time — unfilled sell credits are refunded to your balance. If a partial order (some quantity already filled) is cancelled, it shows as "Partially Cancelled" in your history.',
             },
           ].map((step) => (
             <div key={step.num} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
@@ -239,12 +239,13 @@ export default function HowItWorksPage() {
             📌 Key Rules
           </h3>
           {[
-            { icon: '🔐', text: 'Your login was pre-created by admin. Your username cannot be changed.' },
-            { icon: '⚖️', text: 'You can only sell as many credits as your current balance. You can\'t oversell.' },
+            { icon: '🔐', text: 'Log in with your assigned username (e.g. stall01) and password. Your account was pre-created by the admin — no sign-up.' },
+            { icon: '⚖️', text: 'You can only sell as many credits as your current final balance. Credits are locked (escrowed) the moment you list them, so you can\'t double-sell.' },
             { icon: '🤖', text: 'Matching is fully automatic. No manual confirmation or WhatsApp needed.' },
-            { icon: '❌', text: 'You can cancel any open or partial order from My Orders. Unfilled sell credits are refunded.' },
-            { icon: '📉', text: 'Once your deficit reaches zero, your remaining buy orders are automatically cancelled.' },
+            { icon: '❌', text: 'You can cancel any open or partial order from My Orders. Unfilled sell credits are immediately refunded to your balance. Partially filled cancelled orders show as "Partially Cancelled".' },
+            { icon: '📉', text: 'Once your deficit reaches zero (balance ≥ 0), your remaining open buy orders are automatically cancelled.' },
             { icon: '🕐', text: 'Trading only works when the admin has opened the market. Check the status indicator on the homepage.' },
+            { icon: '📊', text: 'Your final tradeable balance = Original Allocation − Penalty, both set by the admin. You cannot modify your own balance.' },
           ].map(item => (
             <div key={item.text} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
               <span style={{ fontSize: 16, flexShrink: 0, lineHeight: 1.6 }}>{item.icon}</span>
