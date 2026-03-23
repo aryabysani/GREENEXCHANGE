@@ -135,7 +135,7 @@ export async function POST(request: Request) {
   if (action === 'get-transactions') {
     const { data, error } = await supabase
       .from('transactions')
-      .select('id, credits_amount, total_price, created_at, seller_id, buyer_id')
+      .select('id, credits_amount, price_per_credit, total_price, created_at, seller_id, buyer_id')
       .order('created_at', { ascending: false })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

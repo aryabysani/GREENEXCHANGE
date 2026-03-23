@@ -27,6 +27,7 @@ type Listing = {
 type Transaction = {
   id: string
   credits_amount: number
+  price_per_credit: number
   total_price: number | null
   created_at: string
   seller_username: string
@@ -59,6 +60,7 @@ export default function AdminPage() {
   const [msg, setMsg] = useState('')
   const [tradingActive, setTradingActive] = useState(false)
   const [tradingLoading, setTradingLoading] = useState(false)
+  const [exportLoading, setExportLoading] = useState(false)
   const [selectedTeam, setSelectedTeam] = useState<{ id: string; team_username: string } | null>(null)
   const [teamTxns, setTeamTxns] = useState<TeamTransaction[]>([])
   const [teamTxnsLoading, setTeamTxnsLoading] = useState(false)
@@ -112,6 +114,35 @@ export default function AdminPage() {
       setMsg(`❌ Error: ${error}`)
     }
     setActionLoading(null)
+  }
+
+  const handleExportTransactions = async () => {
+    setExportLoading(true)
+    const { data } = await call('get-transactions')
+    const rows: Transaction[] = data ?? []
+
+    const headers = ['#', 'Date & Time', 'Seller', 'Buyer', 'Credits', 'Price/Credit (₹)', 'Total (₹)']
+    const csvRows = [
+      headers.join(','),
+      ...rows.map((t, i) => [
+        rows.length - i,
+        new Date(t.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+        t.seller_username,
+        t.buyer_username,
+        t.credits_amount,
+        Number(t.price_per_credit).toFixed(0),
+        t.total_price != null ? Number(t.total_price).toFixed(0) : '',
+      ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+    ]
+
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `greencredits-transactions-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    setExportLoading(false)
   }
 
   const openTeamTransactions = async (id: string, team_username: string) => {
@@ -212,6 +243,13 @@ export default function AdminPage() {
           >
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff', display: 'inline-block' }} />
             {tradingLoading ? '...' : tradingActive ? 'Pause Trading' : 'Open Trading'}
+          </button>
+          <button
+            onClick={handleExportTransactions}
+            disabled={exportLoading}
+            style={{ background: 'rgba(255,255,255,0.1)', color: '#A8D5B5', border: '1px solid rgba(168,213,181,0.3)', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
+          >
+            {exportLoading ? '⏳ Exporting...' : '⬇️ Export CSV'}
           </button>
           <button
             onClick={() => setAuthed(false)}
