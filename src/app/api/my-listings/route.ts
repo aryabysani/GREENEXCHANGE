@@ -22,7 +22,8 @@ export async function GET() {
     .from('listings')
     .select('*')
     .eq('seller_id', user.id)
-    .in('status', ['live', 'partial'])
+    .neq('status', 'sold')
+    .neq('status', 'removed')
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

@@ -10,7 +10,8 @@ export async function GET() {
   const { data, error } = await admin
     .from('listings')
     .select('*, seller:profiles(team_username)')
-    .in('status', ['live', 'partial'])
+    .neq('status', 'sold')
+    .neq('status', 'removed')
     .eq('is_hidden', false)
     .order('price_per_credit', { ascending: true })
 
