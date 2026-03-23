@@ -48,13 +48,7 @@ export default function BannedPage() {
             Think this is a mistake?
           </p>
           <p style={{ color: '#C62828', margin: 0, fontWeight: 600, fontSize: '0.95rem' }}>
-            Contact the admin at{' '}
-            <a
-              href="mailto:xshhssh@gmail.com"
-              style={{ color: '#C62828', textDecoration: 'underline' }}
-            >
-              xshhssh@gmail.com
-            </a>
+            Contact the admin.
           </p>
         </div>
 

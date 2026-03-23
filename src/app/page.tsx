@@ -177,7 +177,7 @@ export default function HomePage() {
             <div style={{ maxWidth: 600 }}>
               <h1 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 900, fontSize: 'clamp(2rem, 5vw, 3.2rem)', color: '#fff', margin: '0 0 6px', lineHeight: 1.05, letterSpacing: '-0.03em' }}>
                 Green<span style={{ color: '#4CAF50' }}>Credits</span><br />
-                <span style={{ color: '#A8D5B5', fontWeight: 700, fontSize: '0.55em', letterSpacing: '-0.01em' }}>Carbon Exchange — EcoXchange 2025</span>
+                <span style={{ color: '#A8D5B5', fontWeight: 700, fontSize: '0.55em', letterSpacing: '-0.01em' }}>Carbon Exchange — EcoXchange 2026</span>
               </h1>
               <p style={{ color: '#6B9E7E', margin: '12px 0 0', fontSize: '0.95rem', lineHeight: 1.6 }}>
                 Surplus credits? Sell them. In deficit? Buy to offset.<br />

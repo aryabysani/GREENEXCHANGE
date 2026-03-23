@@ -161,7 +161,7 @@ export default function AuthPage() {
               {error === 'BANNED' ? (
                 <>
                   🚫 You are banned as you have violated the rules.<br /><br />
-                  Contact <a href="mailto:xshhssh@gmail.com" style={{ color: '#C62828', fontWeight: 700 }}>xshhssh@gmail.com</a> to get it fixed if you believe you have not done a mistake.
+                  Contact the admin to get it fixed if you believe you have not done a mistake.
                 </>
               ) : error}
             </div>
