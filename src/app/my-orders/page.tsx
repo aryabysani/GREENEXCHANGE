@@ -78,20 +78,20 @@ export default function MyOrdersPage() {
       const [
         { data: profileData },
         { data: buyOrderData },
-        { data: sellOrderData },
+        sellOrderData,
         { data: buyTradeData },
         { data: sellTradeData },
       ] = await Promise.all([
         supabase.from('profiles').select('team_username, carbon_balance').eq('id', uid).single(),
         supabase.from('buy_orders').select('*').eq('buyer_id', uid).order('created_at', { ascending: false }),
-        supabase.from('listings').select('*').eq('seller_id', uid).in('status', ['live', 'partial']).order('created_at', { ascending: false }),
+        fetch('/api/my-listings').then(r => r.json()),
         supabase.from('transactions').select('id, credits_amount, price_per_credit, total_price, created_at, seller_id').eq('buyer_id', uid).order('created_at', { ascending: false }),
         supabase.from('transactions').select('id, credits_amount, price_per_credit, total_price, created_at, buyer_id').eq('seller_id', uid).order('created_at', { ascending: false }),
       ])
 
       setProfile(profileData)
       setBuyOrders(buyOrderData ?? [])
-      setSellOrders(sellOrderData ?? [])
+      setSellOrders(Array.isArray(sellOrderData) ? sellOrderData : [])
 
       // Resolve stall names for trades
       const allIds = Array.from(new Set([

@@ -78,17 +78,8 @@ export default function HomePage() {
     const tradingInterval = setInterval(checkTrading, 10000)
 
     const fetchSellOrders = async () => {
-      const { data } = await supabase.from('listings').select('*').in('status', ['live', 'partial']).eq('is_hidden', false).order('price_per_credit', { ascending: true })
-      const orders = data ?? []
-      const ids = Array.from(new Set(orders.map((o: Record<string, string>) => o.seller_id).filter(Boolean)))
-      if (ids.length > 0) {
-        const { data: profs } = await supabase.from('profiles').select('id, team_username').in('id', ids)
-        const map: Record<string, string> = {}
-        for (const p of profs ?? []) map[p.id] = p.team_username
-        setSellOrders(orders.map((o: Record<string, unknown>) => ({ ...o, profiles: { team_username: map[o.seller_id as string] ?? '—' } })) as SellOrder[])
-      } else {
-        setSellOrders([])
-      }
+      const data: Record<string, unknown>[] = await fetch(`/api/listings?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).catch(() => [])
+      setSellOrders(data.map(o => ({ ...o, profiles: { team_username: (o.seller as Record<string, string>)?.team_username ?? '—' } })) as SellOrder[])
     }
 
     const fetchBuyOrders = async () => {
