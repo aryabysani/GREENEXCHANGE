@@ -39,9 +39,10 @@ type Trade = {
 }
 
 type MarketSnapshot = {
-  best_ask: number | null
-  best_bid: number | null
-  last_trade_price: number | null
+  latest_price: number | null
+  highest_price: number | null
+  lowest_price: number | null
+  avg_price: number | null
 }
 
 function timeAgo(date: string) {
@@ -236,32 +237,30 @@ export default function HomePage() {
       {/* Market Snapshot Ticker */}
       <div style={{ background: '#0D1117', borderBottom: '1px solid #1E3A2F', padding: '10px 24px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', gap: 0, flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ color: '#4A7C5E', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', marginRight: 20, textTransform: 'uppercase' }}>Market</span>
+          <span style={{ color: '#4A7C5E', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', marginRight: 20, textTransform: 'uppercase' }}>Trades</span>
           <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.06em' }}>BEST ASK</span>
-              <span style={{ color: '#4CAF50', fontWeight: 800, fontSize: '0.95rem', fontFamily: 'IBM Plex Mono, monospace' }}>
-                {snapshot?.best_ask != null ? `₹${Number(snapshot.best_ask).toFixed(0)}` : '—'}
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.06em' }}>BEST BID</span>
-              <span style={{ color: '#CE93D8', fontWeight: 800, fontSize: '0.95rem', fontFamily: 'IBM Plex Mono, monospace' }}>
-                {snapshot?.best_bid != null ? `₹${Number(snapshot.best_bid).toFixed(0)}` : '—'}
-              </span>
-            </div>
-            {snapshot?.best_ask != null && snapshot?.best_bid != null && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.06em' }}>SPREAD</span>
-                <span style={{ color: '#9E9E9E', fontWeight: 700, fontSize: '0.95rem', fontFamily: 'IBM Plex Mono, monospace' }}>
-                  ₹{Math.abs(Number(snapshot.best_ask) - Number(snapshot.best_bid)).toFixed(0)}
-                </span>
-              </div>
-            )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.06em' }}>LAST PRICE <span style={{ color: '#4A5568', fontWeight: 400 }}>(5m avg)</span></span>
+              <span style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.06em' }}>LATEST</span>
               <span style={{ color: '#FFB74D', fontWeight: 800, fontSize: '0.95rem', fontFamily: 'IBM Plex Mono, monospace' }}>
-                {snapshot?.last_trade_price != null ? `₹${Number(snapshot.last_trade_price).toFixed(0)}` : '—'}
+                {snapshot?.latest_price != null ? `₹${Number(snapshot.latest_price).toFixed(0)}` : '—'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.06em' }}>HIGH</span>
+              <span style={{ color: '#4CAF50', fontWeight: 800, fontSize: '0.95rem', fontFamily: 'IBM Plex Mono, monospace' }}>
+                {snapshot?.highest_price != null ? `₹${Number(snapshot.highest_price).toFixed(0)}` : '—'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.06em' }}>LOW</span>
+              <span style={{ color: '#FF5252', fontWeight: 800, fontSize: '0.95rem', fontFamily: 'IBM Plex Mono, monospace' }}>
+                {snapshot?.lowest_price != null ? `₹${Number(snapshot.lowest_price).toFixed(0)}` : '—'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.06em' }}>AVG</span>
+              <span style={{ color: '#CE93D8', fontWeight: 800, fontSize: '0.95rem', fontFamily: 'IBM Plex Mono, monospace' }}>
+                {snapshot?.avg_price != null ? `₹${Number(snapshot.avg_price).toFixed(0)}` : '—'}
               </span>
             </div>
           </div>
