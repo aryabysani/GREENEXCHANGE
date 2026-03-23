@@ -106,7 +106,7 @@ export default function HomePage() {
     }
 
     const fetchTrades = async () => {
-      const { data } = await supabase.from('transactions').select('id, credits_amount, price_per_credit, total_price, created_at, seller_id, buyer_id').order('created_at', { ascending: false }).limit(15)
+      const { data } = await supabase.from('transactions').select('id, credits_amount, price_per_credit, total_price, created_at, seller_id, buyer_id').order('created_at', { ascending: false }).limit(3)
       setTrades(data ?? [])
       const ids = Array.from(new Set((data ?? []).flatMap((t: Trade) => [t.seller_id, t.buyer_id])))
       if (ids.length > 0) {
@@ -371,8 +371,47 @@ export default function HomePage() {
 
         {/* Recent Trades */}
         <div style={{ background: '#161B22', border: '1px solid #1E3A2F', borderRadius: 16, marginTop: 16, overflow: 'hidden' }}>
-          <div style={{ padding: '14px 16px', borderBottom: '1px solid #1E3A2F' }}>
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid #1E3A2F', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
             <span style={{ fontWeight: 700, color: '#FFB74D', fontSize: '0.85rem', letterSpacing: '0.08em' }}>⚡ RECENT TRADES</span>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <button
+                onClick={async () => {
+                  const supabase = createClient()
+                  const { data } = await supabase.from('transactions').select('id, credits_amount, price_per_credit, total_price, created_at, seller_id, buyer_id').order('created_at', { ascending: false })
+                  const allTrades = data ?? []
+                  const ids = Array.from(new Set(allTrades.flatMap((t: Trade) => [t.seller_id, t.buyer_id])))
+                  const nameMap: Record<string, string> = {}
+                  if (ids.length > 0) {
+                    const { data: profs } = await supabase.from('profiles').select('id, team_username').in('id', ids)
+                    for (const p of profs ?? []) nameMap[p.id] = p.team_username
+                  }
+                  const rows = [['#', 'Seller', 'Buyer', 'Credits', 'Price/Credit', 'Total (Rs)', 'Date & Time']]
+                  allTrades.forEach((t: Trade, i: number) => {
+                    rows.push([
+                      String(allTrades.length - i),
+                      nameMap[t.seller_id] ?? '—',
+                      nameMap[t.buyer_id] ?? '—',
+                      String(t.credits_amount),
+                      String(Number(t.price_per_credit).toFixed(0)),
+                      t.total_price != null ? String(Number(t.total_price).toFixed(0)) : '—',
+                      new Date(t.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+                    ])
+                  })
+                  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
+                  const blob = new Blob([csv], { type: 'text/csv' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url; a.download = 'all_trades.csv'; a.click()
+                  URL.revokeObjectURL(url)
+                }}
+                style={{ background: 'rgba(255,183,77,0.1)', border: '1px solid rgba(255,183,77,0.3)', color: '#FFB74D', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}
+              >
+                ⬇ CSV
+              </button>
+              <Link href="/trades" style={{ background: 'rgba(76,175,80,0.1)', border: '1px solid rgba(76,175,80,0.3)', color: '#4CAF50', borderRadius: 8, padding: '5px 12px', fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none' }}>
+                View all →
+              </Link>
+            </div>
           </div>
 
           {trades.length === 0 ? (
