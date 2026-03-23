@@ -38,6 +38,12 @@ type Trade = {
   buyer_id: string
 }
 
+type MarketSnapshot = {
+  best_ask: number | null
+  best_bid: number | null
+  last_trade_price: number | null
+}
+
 function timeAgo(date: string) {
   const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
   if (s < 60) return 'just now'
@@ -55,6 +61,7 @@ export default function HomePage() {
   const [userBalance, setUserBalance] = useState<number | null | undefined>(undefined)
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
   const [usernameMap, setUsernameMap] = useState<Record<string, string>>({})
+  const [snapshot, setSnapshot] = useState<MarketSnapshot | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -96,6 +103,11 @@ export default function HomePage() {
       }
     }
 
+    const fetchSnapshot = async () => {
+      const { data } = await supabase.from('market_snapshot').select('*').single()
+      if (data) setSnapshot(data as MarketSnapshot)
+    }
+
     const fetchTrades = async () => {
       const { data } = await supabase.from('transactions').select('id, credits_amount, price_per_credit, total_price, created_at, seller_id, buyer_id').order('created_at', { ascending: false }).limit(15)
       setTrades(data ?? [])
@@ -109,11 +121,11 @@ export default function HomePage() {
     }
 
     // Initial load
-    Promise.all([fetchSellOrders(), fetchBuyOrders(), fetchTrades()]).then(() => setLoading(false))
+    Promise.all([fetchSellOrders(), fetchBuyOrders(), fetchTrades(), fetchSnapshot()]).then(() => setLoading(false))
 
     // Poll every 4s as fallback (realtime requires Supabase replication to be enabled)
     const dataInterval = setInterval(() => {
-      fetchSellOrders(); fetchBuyOrders(); fetchTrades()
+      fetchSellOrders(); fetchBuyOrders(); fetchTrades(); fetchSnapshot()
     }, 4000)
 
     // Realtime subscriptions — fire immediately if replication is enabled
@@ -216,6 +228,41 @@ export default function HomePage() {
                 <div style={{ color: '#fff', fontWeight: 800, fontSize: '1.6rem', fontFamily: 'Outfit, sans-serif' }}>{trades.length}</div>
                 <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>Recent trades</div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Market Snapshot Ticker */}
+      <div style={{ background: '#0D1117', borderBottom: '1px solid #1E3A2F', padding: '10px 24px' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', gap: 0, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ color: '#4A7C5E', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', marginRight: 20, textTransform: 'uppercase' }}>Market</span>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.06em' }}>BEST ASK</span>
+              <span style={{ color: '#4CAF50', fontWeight: 800, fontSize: '0.95rem', fontFamily: 'IBM Plex Mono, monospace' }}>
+                {snapshot?.best_ask != null ? `₹${Number(snapshot.best_ask).toFixed(0)}` : '—'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.06em' }}>BEST BID</span>
+              <span style={{ color: '#CE93D8', fontWeight: 800, fontSize: '0.95rem', fontFamily: 'IBM Plex Mono, monospace' }}>
+                {snapshot?.best_bid != null ? `₹${Number(snapshot.best_bid).toFixed(0)}` : '—'}
+              </span>
+            </div>
+            {snapshot?.best_ask != null && snapshot?.best_bid != null && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.06em' }}>SPREAD</span>
+                <span style={{ color: '#9E9E9E', fontWeight: 700, fontSize: '0.95rem', fontFamily: 'IBM Plex Mono, monospace' }}>
+                  ₹{Math.abs(Number(snapshot.best_ask) - Number(snapshot.best_bid)).toFixed(0)}
+                </span>
+              </div>
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.06em' }}>LAST PRICE <span style={{ color: '#4A5568', fontWeight: 400 }}>(5m avg)</span></span>
+              <span style={{ color: '#FFB74D', fontWeight: 800, fontSize: '0.95rem', fontFamily: 'IBM Plex Mono, monospace' }}>
+                {snapshot?.last_trade_price != null ? `₹${Number(snapshot.last_trade_price).toFixed(0)}` : '—'}
+              </span>
             </div>
           </div>
         </div>

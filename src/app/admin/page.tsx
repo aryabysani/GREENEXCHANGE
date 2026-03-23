@@ -33,6 +33,17 @@ type Transaction = {
   buyer_username: string
 }
 
+type TeamTransaction = {
+  id: string
+  credits_amount: number
+  price_per_credit: number
+  total_price: number | null
+  created_at: string
+  seller_username: string
+  buyer_username: string
+  role: 'seller' | 'buyer'
+}
+
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
   const [username, setUsername] = useState('')
@@ -48,6 +59,9 @@ export default function AdminPage() {
   const [msg, setMsg] = useState('')
   const [tradingActive, setTradingActive] = useState(false)
   const [tradingLoading, setTradingLoading] = useState(false)
+  const [selectedTeam, setSelectedTeam] = useState<{ id: string; team_username: string } | null>(null)
+  const [teamTxns, setTeamTxns] = useState<TeamTransaction[]>([])
+  const [teamTxnsLoading, setTeamTxnsLoading] = useState(false)
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
@@ -98,6 +112,15 @@ export default function AdminPage() {
       setMsg(`❌ Error: ${error}`)
     }
     setActionLoading(null)
+  }
+
+  const openTeamTransactions = async (id: string, team_username: string) => {
+    setSelectedTeam({ id, team_username })
+    setTeamTxns([])
+    setTeamTxnsLoading(true)
+    const { data } = await call('get-team-transactions', id)
+    setTeamTxns(data ?? [])
+    setTeamTxnsLoading(false)
   }
 
   const switchTab = (t: 'profiles' | 'listings' | 'transactions') => {
@@ -274,6 +297,12 @@ export default function AdminPage() {
                       <td style={{ padding: '12px 16px' }}>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           <button
+                            onClick={() => openTeamTransactions(p.id, p.team_username)}
+                            style={{ background: '#E3F2FD', color: '#1565C0', border: '1px solid #BBDEFB', borderRadius: 6, padding: '4px 10px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
+                          >
+                            📊 Trades
+                          </button>
+                          <button
                             onClick={() => handleAction('reset-profile', p.id, `Reset ${p.team_username}`)}
                             disabled={actionLoading === p.id + 'reset-profile'}
                             style={{ background: '#FFF3E0', color: '#E65100', border: '1px solid #FFE082', borderRadius: 6, padding: '4px 10px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
@@ -403,6 +432,86 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+      {/* Team transactions modal */}
+      {selectedTeam && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          onClick={() => setSelectedTeam(null)}
+        >
+          <div
+            style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 720, maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,0.4)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div style={{ padding: '18px 24px', borderBottom: '1px solid #E8F5E9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '1.1rem', color: '#1A3C2B' }}>
+                  📊 {selectedTeam.team_username}
+                </div>
+                <div style={{ color: '#6B7280', fontSize: '0.8rem', marginTop: 2 }}>
+                  {teamTxnsLoading ? 'Loading...' : `${teamTxns.length} transaction${teamTxns.length !== 1 ? 's' : ''}`}
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedTeam(null)}
+                style={{ background: '#F5F5F5', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontWeight: 700, color: '#6B7280', fontSize: '0.9rem' }}
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {teamTxnsLoading ? (
+                <div style={{ padding: 48, textAlign: 'center', color: '#9E9E9E' }}>Loading trades...</div>
+              ) : teamTxns.length === 0 ? (
+                <div style={{ padding: 48, textAlign: 'center', color: '#9E9E9E' }}>No transactions found for this team.</div>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                  <thead>
+                    <tr style={{ background: '#F0F7F1', position: 'sticky', top: 0 }}>
+                      {['Role', 'Counterparty', 'Credits', 'Price/Credit', 'Total', 'Time'].map(h => (
+                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#6B7280', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {teamTxns.map((t, i) => (
+                      <tr key={t.id} style={{ borderTop: '1px solid #E8F5E9', background: i % 2 === 0 ? '#fff' : '#FAFFFE' }}>
+                        <td style={{ padding: '11px 16px' }}>
+                          <span style={{
+                            background: t.role === 'seller' ? '#E8F5E9' : '#EDE7F6',
+                            color: t.role === 'seller' ? '#2D6A4F' : '#4527A0',
+                            borderRadius: 6, padding: '2px 8px', fontWeight: 700, fontSize: '0.75rem',
+                          }}>
+                            {t.role === 'seller' ? '▲ SOLD' : '▼ BOUGHT'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '11px 16px', fontWeight: 600, color: '#1A3C2B' }}>
+                          {t.role === 'seller' ? t.buyer_username : t.seller_username}
+                        </td>
+                        <td style={{ padding: '11px 16px' }}>
+                          <span style={{ background: '#E8F5E9', color: '#2D6A4F', borderRadius: 6, padding: '2px 8px', fontWeight: 700 }}>
+                            ♻️ {t.credits_amount}
+                          </span>
+                        </td>
+                        <td style={{ padding: '11px 16px', color: '#6B7280' }}>₹{Number(t.price_per_credit).toFixed(0)}</td>
+                        <td style={{ padding: '11px 16px', fontWeight: 700, color: '#4CAF50' }}>
+                          {t.total_price != null ? `₹${Number(t.total_price).toFixed(0)}` : '—'}
+                        </td>
+                        <td style={{ padding: '11px 16px', color: '#9E9E9E', fontSize: '0.8rem' }}>
+                          {new Date(t.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @media (max-width: 640px) {
           .admin-header { padding: 12px 16px !important; }

@@ -199,6 +199,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ active: data?.value === 'true' })
   }
 
+  // ── get-team-transactions ──────────────────────────────────────
+  if (action === 'get-team-transactions') {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('id, credits_amount, price_per_credit, total_price, created_at, seller_id, buyer_id')
+      .or(`seller_id.eq.${id},buyer_id.eq.${id}`)
+      .order('created_at', { ascending: false })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    const allIds = Array.from(new Set((data ?? []).flatMap((t: Record<string, unknown>) => [t.seller_id as string, t.buyer_id as string])))
+    const { data: profs } = await supabase.from('profiles').select('id, team_username').in('id', allIds)
+    const nameMap: Record<string, string> = {}
+    for (const p of profs ?? []) nameMap[p.id] = p.team_username
+
+    const enriched = (data ?? []).map((t: Record<string, unknown>) => ({
+      ...t,
+      seller_username: nameMap[t.seller_id as string] ?? '—',
+      buyer_username: nameMap[t.buyer_id as string] ?? '—',
+      role: t.seller_id === id ? 'seller' : 'buyer',
+    }))
+    return NextResponse.json({ data: enriched })
+  }
+
   // ── get-buy-orders ─────────────────────────────────────────────
   if (action === 'get-buy-orders') {
     const { data, error } = await supabase
