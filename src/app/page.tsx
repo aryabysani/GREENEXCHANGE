@@ -269,6 +269,7 @@ export default function HomePage() {
           <div style={{ fontSize: 40, marginBottom: 8 }}>⏸️</div>
           <div style={{ fontWeight: 800, color: '#FF5252', fontSize: '1.3rem', fontFamily: 'Outfit, sans-serif' }}>Trading is currently paused</div>
           <p style={{ color: '#9E9E9E', margin: '8px 0 0' }}>The admin will open trading when it&apos;s time. Sit tight — the market opens soon.</p>
+          <p style={{ color: '#6B7280', margin: '8px 0 0', fontSize: '0.82rem' }}>⚠️ When the market opens, <strong style={{ color: '#9E9E9E' }}>manually refresh the page</strong> to load the latest orders and start trading.</p>
         </div>
       )}
 
