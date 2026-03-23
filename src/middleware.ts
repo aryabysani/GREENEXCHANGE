@@ -2,6 +2,19 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname
+  const isPublicPath =
+    path === '/' ||
+    path.startsWith('/how-it-works') ||
+    path.startsWith('/listing/') ||
+    path.startsWith('/admin') ||
+    path.startsWith('/auth') ||
+    path.startsWith('/banned') ||
+    path.startsWith('/api') ||
+    path.startsWith('/_next')
+
+  if (isPublicPath) return NextResponse.next({ request })
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -25,20 +38,9 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { session } } = await supabase.auth.getSession()
 
-  const path = request.nextUrl.pathname
-  const isPublicPath =
-    path === '/' ||
-    path.startsWith('/how-it-works') ||
-    path.startsWith('/listing/') ||
-    path.startsWith('/admin') ||
-    path.startsWith('/auth') ||
-    path.startsWith('/banned') ||
-    path.startsWith('/api') ||
-    path.startsWith('/_next')
-
-  if (!user && !isPublicPath) {
+  if (!session) {
     return NextResponse.redirect(new URL('/auth', request.url))
   }
 
