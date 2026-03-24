@@ -52,6 +52,9 @@ export default function BannedPage() {
           </p>
         </div>
 
+        <p style={{ color: '#6B7280', fontSize: '0.85rem', marginBottom: 16 }}>
+          If the admin has unbanned you, log back in to access the market.
+        </p>
         <a
           href="/auth"
           style={{
