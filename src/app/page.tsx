@@ -57,6 +57,7 @@ export default function HomePage() {
   const [sellOrders, setSellOrders] = useState<SellOrder[]>([])
   const [buyOrders, setBuyOrders] = useState<BuyOrder[]>([])
   const [trades, setTrades] = useState<Trade[]>([])
+  const [totalTrades, setTotalTrades] = useState<number>(0)
   const [tradingActive, setTradingActive] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(true)
   const [userBalance, setUserBalance] = useState<number | null | undefined>(undefined)
@@ -106,8 +107,9 @@ export default function HomePage() {
     }
 
     const fetchTrades = async () => {
-      const { data } = await supabase.from('transactions').select('id, credits_amount, price_per_credit, total_price, created_at, seller_id, buyer_id').order('created_at', { ascending: false }).limit(3)
+      const { data, count } = await supabase.from('transactions').select('id, credits_amount, price_per_credit, total_price, created_at, seller_id, buyer_id', { count: 'exact' }).order('created_at', { ascending: false }).limit(3)
       setTrades(data ?? [])
+      setTotalTrades(count ?? 0)
       const ids = Array.from(new Set((data ?? []).flatMap((t: Trade) => [t.seller_id, t.buyer_id])))
       if (ids.length > 0) {
         const { data: profiles } = await supabase.from('profiles').select('id, team_username').in('id', ids)
@@ -222,8 +224,8 @@ export default function HomePage() {
                 <div style={{ color: '#9E6BA8', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>Credits wanted</div>
               </div>
               <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '14px 20px', minWidth: 110, textAlign: 'center' }}>
-                <div style={{ color: '#fff', fontWeight: 800, fontSize: '1.6rem', fontFamily: 'Outfit, sans-serif' }}>{trades.length}</div>
-                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>Recent trades</div>
+                <div style={{ color: '#fff', fontWeight: 800, fontSize: '1.6rem', fontFamily: 'Outfit, sans-serif' }}>{totalTrades}</div>
+                <div style={{ color: '#6B7280', fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>Total trades</div>
               </div>
             </div>
           </div>
