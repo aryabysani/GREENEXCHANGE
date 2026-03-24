@@ -185,7 +185,7 @@ export default function AdminPage() {
 
   const saveField = async (id: string, field: 'original_balance' | 'penalty') => {
     const val = parseInt(editingValue, 10)
-    if (isNaN(val) || val < 0) { setMsg('❌ Invalid value'); setEditingField(null); return }
+    if (isNaN(val) || (field === 'penalty' && val < 0)) { setMsg('❌ Invalid value'); setEditingField(null); return }
     setActionLoading(id + field)
     const action = field === 'original_balance' ? 'set-original-balance' : 'set-penalty'
     const { success, error, carbon_balance } = await call(action, id, val)
@@ -401,7 +401,7 @@ export default function AdminPage() {
                         {editingField?.id === p.id && editingField.field === 'original_balance' ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             <input
-                              type="number" min={0} value={editingValue}
+                              type="number" value={editingValue}
                               onChange={e => setEditingValue(e.target.value)}
                               onKeyDown={e => { if (e.key === 'Enter') saveField(p.id, 'original_balance'); if (e.key === 'Escape') setEditingField(null) }}
                               autoFocus
