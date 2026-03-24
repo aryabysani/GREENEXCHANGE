@@ -11,7 +11,6 @@ type Profile = {
   username: string
   team_username: string
   carbon_balance: number | null
-  original_balance: number | null
   penalty: number | null
   is_banned: boolean
 }
@@ -65,7 +64,7 @@ export default function AdminPage() {
   const [tradingLoading, setTradingLoading] = useState(false)
   const [exportLoading, setExportLoading] = useState(false)
   const [showExportMenu, setShowExportMenu] = useState(false)
-  const [editingField, setEditingField] = useState<{ id: string; field: 'original_balance' | 'penalty' } | null>(null)
+  const [editingField, setEditingField] = useState<{ id: string; field: 'carbon_balance' | 'penalty' } | null>(null)
   const [editingValue, setEditingValue] = useState('')
   const [selectedTeam, setSelectedTeam] = useState<{ id: string; team_username: string } | null>(null)
   const [teamTxns, setTeamTxns] = useState<TeamTransaction[]>([])
@@ -162,10 +161,10 @@ export default function AdminPage() {
         if (stats[t.buyer_username]) { stats[t.buyer_username].buys++; stats[t.buyer_username].creditsBought += t.credits_amount }
       }
       downloadCsv([
-        ['Team Username', 'Login Username', 'Orig. Balance', 'Penalty', 'Final Balance', 'Status', '# Sells', 'Credits Sold', '# Buys', 'Credits Bought'],
+        ['Team Username', 'Login Username', 'Final Balance', 'Penalty', 'Status', '# Sells', 'Credits Sold', '# Buys', 'Credits Bought'],
         ...rows.map(p => {
           const s = stats[p.team_username] ?? { sells: 0, buys: 0, creditsSold: 0, creditsBought: 0 }
-          return [p.team_username, p.username, String(p.original_balance ?? ''), String(p.penalty ?? 0), String(p.carbon_balance ?? ''), p.is_banned ? 'Banned' : 'Active', String(s.sells), String(s.creditsSold), String(s.buys), String(s.creditsBought)]
+          return [p.team_username, p.username, String(p.carbon_balance ?? ''), String(p.penalty ?? 0), p.is_banned ? 'Banned' : 'Active', String(s.sells), String(s.creditsSold), String(s.buys), String(s.creditsBought)]
         }),
       ], 'greencredits-teams')
     } else if (type === 'listings') {
@@ -183,17 +182,20 @@ export default function AdminPage() {
     setExportLoading(false)
   }
 
-  const saveField = async (id: string, field: 'original_balance' | 'penalty') => {
-    const isEmpty = editingValue.trim() === ''
-    const val = isEmpty ? null : parseInt(editingValue, 10)
-    if (!isEmpty && (val === null || isNaN(val))) { setMsg('❌ Invalid value'); setEditingField(null); return }
-    if (field === 'penalty' && (val === null || val < 0)) { setMsg('❌ Invalid value'); setEditingField(null); return }
+  const saveField = async (id: string, field: 'carbon_balance' | 'penalty') => {
+    const val = parseInt(editingValue, 10)
+    if (isNaN(val)) { setMsg('❌ Invalid value'); setEditingField(null); return }
+    if (field === 'penalty' && val < 0) { setMsg('❌ Penalty cannot be negative'); setEditingField(null); return }
     setActionLoading(id + field)
-    const action = field === 'original_balance' ? 'set-original-balance' : 'set-penalty'
+    const action = field === 'carbon_balance' ? 'set-balance' : 'set-penalty'
     const { success, error, carbon_balance } = await call(action, id, val)
     if (success) {
-      setMsg(`✅ ${field === 'original_balance' ? 'Original balance' : 'Penalty'} updated to ${val ?? 'blank (Contact admin)'}`)
-      setProfiles(prev => prev.map(p => p.id === id ? { ...p, [field]: val, carbon_balance: carbon_balance ?? p.carbon_balance } : p))
+      setMsg(`✅ ${field === 'carbon_balance' ? 'Final balance' : 'Penalty'} updated to ${val}`)
+      setProfiles(prev => prev.map(p => {
+        if (p.id !== id) return p
+        if (field === 'carbon_balance') return { ...p, carbon_balance: val }
+        return { ...p, penalty: val, carbon_balance: carbon_balance ?? p.carbon_balance }
+      }))
     } else {
       setMsg(`❌ ${error}`)
     }
@@ -388,7 +390,7 @@ export default function AdminPage() {
               <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.87rem' }}>
                 <thead>
                   <tr style={{ background: '#F0F7F1' }}>
-                    {['Username', 'Team Username', 'Orig. Balance', 'Penalty', 'Final Balance', 'Status', 'Actions'].map(h => (
+                    {['Username', 'Team Username', 'Final Balance', 'Penalty', 'Status', 'Actions'].map(h => (
                       <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#6B7280', fontWeight: 600, fontSize: '0.78rem', textTransform: 'uppercase' }}>{h}</th>
                     ))}
                   </tr>
@@ -398,27 +400,27 @@ export default function AdminPage() {
                     <tr key={p.id} style={{ borderTop: '1px solid #E8F5E9', background: p.is_banned ? '#FFF3F3' : i % 2 === 0 ? '#fff' : '#FAFFFE' }}>
                       <td style={{ padding: '12px 16px', color: '#6B7280', fontFamily: 'monospace', fontSize: '0.85rem' }}>{p.username}</td>
                       <td style={{ padding: '12px 16px', fontWeight: 600, color: '#1A3C2B' }}>{p.team_username}</td>
-                      {/* Orig. Balance */}
+                      {/* Final Balance (editable) */}
                       <td style={{ padding: '12px 16px' }}>
-                        {editingField?.id === p.id && editingField.field === 'original_balance' ? (
+                        {editingField?.id === p.id && editingField.field === 'carbon_balance' ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             <input
                               type="number" value={editingValue}
                               onChange={e => setEditingValue(e.target.value)}
-                              onKeyDown={e => { if (e.key === 'Enter') saveField(p.id, 'original_balance'); if (e.key === 'Escape') setEditingField(null) }}
+                              onKeyDown={e => { if (e.key === 'Enter') saveField(p.id, 'carbon_balance'); if (e.key === 'Escape') setEditingField(null) }}
                               autoFocus
                               style={{ width: 72, padding: '3px 7px', borderRadius: 6, border: '1.5px solid #4CAF50', fontSize: '0.85rem', fontWeight: 700, color: '#1A3C2B', outline: 'none' }}
                             />
-                            <button onClick={() => saveField(p.id, 'original_balance')} disabled={actionLoading === p.id + 'original_balance'} style={{ background: '#4CAF50', color: '#fff', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>✓</button>
+                            <button onClick={() => saveField(p.id, 'carbon_balance')} disabled={actionLoading === p.id + 'carbon_balance'} style={{ background: '#4CAF50', color: '#fff', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>✓</button>
                             <button onClick={() => setEditingField(null)} style={{ background: '#F5F5F5', color: '#9E9E9E', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontSize: '0.8rem' }}>✕</button>
                           </div>
                         ) : (
                           <span
-                            onClick={() => { setEditingField({ id: p.id, field: 'original_balance' }); setEditingValue(String(p.original_balance ?? 0)) }}
+                            onClick={() => { setEditingField({ id: p.id, field: 'carbon_balance' }); setEditingValue(String(p.carbon_balance ?? 0)) }}
                             title="Click to edit"
-                            style={{ background: '#E3F2FD', color: '#1565C0', borderRadius: 6, padding: '2px 8px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                            style={{ background: '#E8F5E9', color: '#2D6A4F', borderRadius: 6, padding: '2px 8px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
                           >
-                            {p.original_balance ?? '—'} <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>✏️</span>
+                            ♻️ {p.carbon_balance ?? '—'} <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>✏️</span>
                           </span>
                         )}
                       </td>
@@ -445,12 +447,6 @@ export default function AdminPage() {
                             {p.penalty ?? 0} <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>✏️</span>
                           </span>
                         )}
-                      </td>
-                      {/* Final Balance (read-only) */}
-                      <td style={{ padding: '12px 16px' }}>
-                        <span style={{ background: '#E8F5E9', color: '#2D6A4F', borderRadius: 6, padding: '2px 8px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                          ♻️ {p.carbon_balance ?? '—'}
-                        </span>
                       </td>
                       <td style={{ padding: '12px 16px' }}>
                         {p.is_banned

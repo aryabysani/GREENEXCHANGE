@@ -33,10 +33,10 @@ export async function POST(request: Request) {
 
   // ── set-balance ──────────────────────────────────────────────
   if (action === 'set-balance') {
-    if (typeof value !== 'number' || value < 0) return NextResponse.json({ error: 'Invalid value' }, { status: 400 })
+    if (typeof value !== 'number') return NextResponse.json({ error: 'Invalid value' }, { status: 400 })
     const { error } = await supabase.from('profiles').update({ carbon_balance: value }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, carbon_balance: value })
   }
 
   // ── set-original-balance ──────────────────────────────────────
@@ -53,9 +53,10 @@ export async function POST(request: Request) {
   // ── set-penalty ───────────────────────────────────────────────
   if (action === 'set-penalty') {
     if (typeof value !== 'number' || value < 0) return NextResponse.json({ error: 'Invalid value' }, { status: 400 })
-    const { data: prof } = await supabase.from('profiles').select('original_balance').eq('id', id).single()
-    const original_balance = prof?.original_balance ?? 0
-    const carbon_balance = original_balance - value
+    const { data: prof } = await supabase.from('profiles').select('carbon_balance, penalty').eq('id', id).single()
+    const currentPenalty = prof?.penalty ?? 0
+    const delta = value - currentPenalty
+    const carbon_balance = (prof?.carbon_balance ?? 0) - delta
     const { error } = await supabase.from('profiles').update({ penalty: value, carbon_balance }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true, carbon_balance })
