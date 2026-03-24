@@ -41,13 +41,13 @@ export async function POST(request: Request) {
 
   // ── set-original-balance ──────────────────────────────────────
   if (action === 'set-original-balance') {
-    if (typeof value !== 'number') return NextResponse.json({ error: 'Invalid value' }, { status: 400 })
+    if (value !== null && typeof value !== 'number') return NextResponse.json({ error: 'Invalid value' }, { status: 400 })
     const { data: prof } = await supabase.from('profiles').select('penalty').eq('id', id).single()
     const penalty = prof?.penalty ?? 0
-    const carbon_balance = value - penalty
-    const { error } = await supabase.from('profiles').update({ original_balance: value, carbon_balance }).eq('id', id)
+    const cb = value === null ? null : value - penalty
+    const { error } = await supabase.from('profiles').update({ original_balance: value, carbon_balance: cb }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ success: true, carbon_balance })
+    return NextResponse.json({ success: true, carbon_balance: cb })
   }
 
   // ── set-penalty ───────────────────────────────────────────────

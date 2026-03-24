@@ -184,13 +184,15 @@ export default function AdminPage() {
   }
 
   const saveField = async (id: string, field: 'original_balance' | 'penalty') => {
-    const val = parseInt(editingValue, 10)
-    if (isNaN(val) || (field === 'penalty' && val < 0)) { setMsg('❌ Invalid value'); setEditingField(null); return }
+    const isEmpty = editingValue.trim() === ''
+    const val = isEmpty ? null : parseInt(editingValue, 10)
+    if (!isEmpty && (val === null || isNaN(val))) { setMsg('❌ Invalid value'); setEditingField(null); return }
+    if (field === 'penalty' && (val === null || val < 0)) { setMsg('❌ Invalid value'); setEditingField(null); return }
     setActionLoading(id + field)
     const action = field === 'original_balance' ? 'set-original-balance' : 'set-penalty'
     const { success, error, carbon_balance } = await call(action, id, val)
     if (success) {
-      setMsg(`✅ ${field === 'original_balance' ? 'Original balance' : 'Penalty'} updated to ${val}`)
+      setMsg(`✅ ${field === 'original_balance' ? 'Original balance' : 'Penalty'} updated to ${val ?? 'blank (Contact admin)'}`)
       setProfiles(prev => prev.map(p => p.id === id ? { ...p, [field]: val, carbon_balance: carbon_balance ?? p.carbon_balance } : p))
     } else {
       setMsg(`❌ ${error}`)
