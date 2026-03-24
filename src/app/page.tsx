@@ -79,7 +79,7 @@ export default function HomePage() {
     const checkTrading = () =>
       fetch(`/api/trading-status?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(d => setTradingActive(d.active === true))
     checkTrading()
-    const tradingInterval = setInterval(checkTrading, 10000)
+    const tradingInterval = setInterval(checkTrading, 20000)
 
     const fetchSellOrders = async () => {
       const data = await fetch(`/api/listings?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).catch(() => [])
@@ -120,10 +120,10 @@ export default function HomePage() {
     // Initial load
     Promise.all([fetchSellOrders(), fetchBuyOrders(), fetchTrades(), fetchSnapshot()]).then(() => setLoading(false))
 
-    // Poll every 4s as fallback (realtime requires Supabase replication to be enabled)
+    // Poll every 15s as fallback (realtime handles live updates)
     const dataInterval = setInterval(() => {
       fetchSellOrders(); fetchBuyOrders(); fetchTrades(); fetchSnapshot()
-    }, 4000)
+    }, 15000)
 
     // Realtime subscriptions — fire immediately if replication is enabled
     const channel = supabase
