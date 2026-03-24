@@ -24,13 +24,9 @@ export default function AuthPage() {
       if (authError) {
         setError(authError.message)
       } else {
-        // Check if profile is set up
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_banned')
-          .eq('id', data.user!.id)
-          .single()
-        if (profile?.is_banned) {
+        // Check ban status via server route (bypasses RLS, always accurate)
+        const me = await fetch('/api/me', { cache: 'no-store' }).then(r => r.json())
+        if (me?.user?.is_banned) {
           await supabase.auth.signOut()
           setError('BANNED')
           return
