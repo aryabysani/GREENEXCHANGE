@@ -46,14 +46,12 @@ export default function Navbar() {
         borderBottom: '1px solid #C8E6C9',
         padding: '0 24px',
         height: 64,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
         position: 'sticky',
         top: 0,
         zIndex: 100,
         boxShadow: '0 1px 8px rgba(26,60,43,0.07)',
       }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {/* Logo */}
         <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 22, lineHeight: 1 }}>♻️</span>
@@ -169,6 +167,7 @@ export default function Navbar() {
           <span style={{ display: 'block', width: 22, height: 2, background: '#1A3C2B', borderRadius: 2, opacity: mobileOpen ? 0 : 1, transition: 'all 0.2s' }} />
           <span style={{ display: 'block', width: 22, height: 2, background: '#1A3C2B', borderRadius: 2, transition: 'all 0.2s', transform: mobileOpen ? 'rotate(-45deg) translate(5px, -5px)' : 'none' }} />
         </button>
+        </div>
       </nav>
 
       {/* Builder bar */}
