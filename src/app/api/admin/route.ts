@@ -41,7 +41,7 @@ export async function POST(request: Request) {
 
   // ── set-original-balance ──────────────────────────────────────
   if (action === 'set-original-balance') {
-    if (typeof value !== 'number' || value < 0) return NextResponse.json({ error: 'Invalid value' }, { status: 400 })
+    if (typeof value !== 'number') return NextResponse.json({ error: 'Invalid value' }, { status: 400 })
     const { data: prof } = await supabase.from('profiles').select('penalty').eq('id', id).single()
     const penalty = prof?.penalty ?? 0
     const carbon_balance = value - penalty
