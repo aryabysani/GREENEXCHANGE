@@ -170,7 +170,7 @@ export default function EmissionsPage() {
         }
 
         if (r.id.startsWith('temp-')) {
-          const { error } = await supabase.from('emissions_data').insert(payload)
+          const { error } = await supabase.from('emissions_data').upsert(payload, { onConflict: 'stall_no,product' })
           if (error) throw error
         } else {
           const { error } = await supabase.from('emissions_data').update(payload).eq('id', r.id)
