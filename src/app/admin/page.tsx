@@ -56,6 +56,8 @@ type EmissionRecord = {
   emission_per_unit: number
   total_emission: number
   status: 'pending' | 'approved'
+  is_submitted: boolean
+  is_verified: boolean
 }
 
 export default function AdminPage() {
@@ -89,6 +91,9 @@ export default function AdminPage() {
   const [emEditId, setEmEditId] = useState<string | null>(null)   // row being inline-edited
   const [emEditVals, setEmEditVals] = useState<{ product: string; emission_per_unit: string; quantity: string }>({ product: '', emission_per_unit: '', quantity: '' })
   const [emActionLoading, setEmActionLoading] = useState<string | null>(null)
+  const [newStall, setNewStall] = useState('')
+  const [newProduct, setNewProduct] = useState('')
+  const [newEPU, setNewEPU] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
@@ -101,7 +106,7 @@ export default function AdminPage() {
     if (error) {
       setEmissionsMsg('❌ Failed to load: ' + error.message)
     } else {
-      setEmissionsData((data ?? []).map((r) => ({
+      setEmissionsData((data ?? []).map((r: any) => ({
         id: r.id,
         stall_no: r.stall_no,
         product: r.product,
@@ -109,6 +114,8 @@ export default function AdminPage() {
         emission_per_unit: Number(r.emission_per_unit),
         total_emission: Number(r.total_emission),
         status: (r.status ?? 'pending') as 'pending' | 'approved',
+        is_submitted: !!r.is_submitted,
+        is_verified: !!r.is_verified,
       })))
     }
     setEmissionsLoading(false)
@@ -136,16 +143,69 @@ export default function AdminPage() {
     setEmActionLoading(id + '-reset')
     const { error } = await supabase
       .from('emissions_data')
-      .update({ status: 'pending', updated_at: new Date().toISOString() })
+      .update({ status: 'pending', is_submitted: false, updated_at: new Date().toISOString() })
       .eq('id', id)
     if (error) {
       setEmissionsMsg('❌ Reset failed: ' + error.message)
     } else {
-      setEmissionsData((prev) => prev.map((r) => r.id === id ? { ...r, status: 'pending' } : r))
-      setEmissionsMsg('✅ Row reset to pending.')
+      setEmissionsData((prev: EmissionRecord[]) => prev.map((r: EmissionRecord) => r.id === id ? { ...r, status: 'pending', is_submitted: false } : r))
+      setEmissionsMsg('✅ Row reset.')
       setTimeout(() => setEmissionsMsg(''), 2500)
     }
     setEmActionLoading(null)
+  }
+
+  // Initial value entry BEFORE event
+  const addInitialEmission = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!newStall || !newProduct || !newEPU) return
+    setEmActionLoading('add-new')
+    const { error } = await supabase.from('emissions_data').insert({
+      stall_no: newStall.trim(),
+      product: newProduct.trim(),
+      emission_per_unit: parseFloat(newEPU) || 0,
+      quantity: 0,
+      total_emission: 0,
+      is_submitted: false
+    })
+    if (error) {
+      setEmissionsMsg('❌ Add failed: ' + error.message)
+    } else {
+      setNewStall(''); setNewProduct(''); setNewEPU('')
+      loadEmissions()
+      setEmissionsMsg('✅ Initial product added.')
+    }
+    setEmActionLoading(null)
+  }
+
+  // Lightweight verification
+  const markVerified = async (id: string, state: boolean) => {
+    setEmActionLoading(id + '-verify')
+    const { error } = await supabase
+      .from('emissions_data')
+      .update({ is_verified: state, updated_at: new Date().toISOString() })
+      .eq('id', id)
+    if (error) {
+      setEmissionsMsg('❌ Verify failed: ' + error.message)
+    } else {
+      setEmissionsData((prev: EmissionRecord[]) => prev.map((r: EmissionRecord) => r.id === id ? { ...r, is_verified: state } : r))
+    }
+    setEmActionLoading(null)
+  }
+
+  // Export audit CSV
+  const downloadAuditCsv = () => {
+    const submittedOnly = emissionsData.filter(r => r.is_submitted)
+    if (submittedOnly.length === 0) {
+      setEmissionsMsg('ℹ️ No submitted emissions to export.')
+      return
+    }
+    downloadCsv([
+      ['StallNo', 'Product', 'InitialEmission', 'FinalEmission', 'Quantity', 'EmissionPerUnit'],
+      ...submittedOnly.map(r => [
+        r.stall_no, r.product, '0', String(r.total_emission), String(r.quantity), String(r.emission_per_unit)
+      ])
+    ], 'emissions-audit')
   }
 
   // Admin inline save (product + emission_per_unit + quantity)
@@ -738,244 +798,167 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* CSV Upload card */}
-            <div style={{
-              background: '#fff', border: '1.5px solid #C8E6C9', borderRadius: 16,
-              padding: '20px 24px', marginBottom: 24,
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16,
-            }}>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1A3C2B', marginBottom: 4 }}>📤 CSV Upload</div>
-                <div style={{ fontSize: '0.82rem', color: '#6B7280' }}>Required columns: <code>StallNo, Product, EmissionPerUnit</code></div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20, marginBottom: 24 }}>
+              {/* Initial Values Entry (BEFORE event) */}
+              <div style={{ background: '#fff', border: '1.5px solid #C8E6C9', borderRadius: 16, padding: '20px 24px' }}>
+                <div style={{ fontWeight: 700, fontSize: '1rem', color: '#1A3C2B', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  🆕 Add Pre-Event Product
+                </div>
+                <form onSubmit={addInitialEmission} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <input
+                      placeholder="Stall No"
+                      value={newStall} onChange={e => setNewStall(e.target.value)}
+                      style={{ padding: '8px 12px', border: '1.5px solid #E8F5E9', borderRadius: 8, fontSize: '0.85rem' }}
+                    />
+                    <input
+                      placeholder="Product Name"
+                      value={newProduct} onChange={e => setNewProduct(e.target.value)}
+                      style={{ padding: '8px 12px', border: '1.5px solid #E8F5E9', borderRadius: 8, fontSize: '0.85rem' }}
+                    />
+                  </div>
+                  <input
+                    placeholder="Emission Per Unit (kg CO₂e)"
+                    type="number" step="any"
+                    value={newEPU} onChange={e => setNewEPU(e.target.value)}
+                    style={{ padding: '8px 12px', border: '1.5px solid #E8F5E9', borderRadius: 8, fontSize: '0.85rem' }}
+                  />
+                  <button
+                    disabled={emActionLoading === 'add-new'}
+                    style={{ background: '#1A3C2B', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    {emActionLoading === 'add-new' ? 'Saving...' : '➕ Add Product'}
+                  </button>
+                </form>
               </div>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv,text/csv"
-                  onChange={handleCsvUpload}
-                  disabled={csvLoading}
-                  style={{ display: 'none' }}
-                  id="em-csv-input"
-                />
+
+              {/* CSV Upload */}
+              <div style={{ background: '#fff', border: '1.5px solid #C8E6C9', borderRadius: 16, padding: '20px 24px' }}>
+                <div style={{ fontWeight: 700, fontSize: '1rem', color: '#1A3C2B', marginBottom: 8 }}>📤 Bulk Upload (CSV)</div>
+                <div style={{ fontSize: '0.82rem', color: '#6B7280', marginBottom: 14 }}>Cols: <code>StallNo, Product, EmissionPerUnit</code></div>
+                <input ref={fileInputRef} type="file" accept=".csv" onChange={handleCsvUpload} disabled={csvLoading} style={{ display: 'none' }} id="em-csv-input" />
                 <label
                   htmlFor="em-csv-input"
                   style={{
-                    background: csvLoading ? '#9E9E9E' : '#1A3C2B',
-                    color: '#fff', borderRadius: 10, padding: '9px 20px',
-                    fontWeight: 700, fontSize: '0.88rem',
-                    cursor: csvLoading ? 'not-allowed' : 'pointer',
-                    userSelect: 'none',
+                    display: 'block', background: csvLoading ? '#9E9E9E' : '#E8F5E9', color: '#2D6A4F', border: '1.5px solid #C8E6C9',
+                    borderRadius: 10, padding: '12px', fontWeight: 700, textAlign: 'center', cursor: csvLoading ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {csvLoading ? '⏳ Uploading…' : '📂 Choose CSV'}
+                  {csvLoading ? '⏳ Uploading…' : '📂 Choose CSV File'}
                 </label>
               </div>
             </div>
 
-            {/* Grand total banner */}
-            {(() => {
-              const grandTotal = emissionsData.reduce((s, r) => s + r.total_emission, 0)
-              const uniqueStalls = Array.from(new Set(emissionsData.map((r) => r.stall_no)))
-              return (
-                <div style={{
-                  background: 'linear-gradient(135deg, #1A3C2B, #2D6A4F)',
-                  borderRadius: 16, padding: '18px 28px', marginBottom: 24,
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
-                }}>
-                  <div>
-                    <div style={{ color: '#A8D5B5', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>All-Stall Total Emissions</div>
-                    <div style={{ color: '#4CAF50', fontWeight: 800, fontSize: '2rem', lineHeight: 1 }}>
-                      {grandTotal.toFixed(2)} <span style={{ fontSize: '0.95rem', color: '#A8D5B5', fontWeight: 600 }}>kg CO₂e</span>
-                    </div>
-                    <div style={{ color: '#A8D5B5', fontSize: '0.78rem', marginTop: 6 }}>
-                      {uniqueStalls.length} stall{uniqueStalls.length !== 1 ? 's' : ''} · {emissionsData.length} product row{emissionsData.length !== 1 ? 's' : ''}
-                    </div>
-                   </div>
-                 </div>
-               )
-            })()}
+            {/* Audit Dashboard Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h2 style={{ margin: 0, fontFamily: 'Outfit, sans-serif', fontWeight: 800, color: '#1A3C2B', fontSize: '1.4rem' }}>
+                📊 Emissions Audit Dashboard
+              </h2>
+              <button
+                onClick={downloadAuditCsv}
+                style={{ background: '#1A3C2B', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem' }}
+              >
+                📥 Download Audit CSV
+              </button>
+            </div>
 
-            {/* Stalls grouped */}
             {emissionsLoading ? (
               <div style={{ textAlign: 'center', padding: 60, color: '#6B7280' }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>🌿</div>
-                Loading emissions…
+                Loading audit data…
               </div>
             ) : emissionsData.length === 0 ? (
               <div style={{ background: '#fff', border: '1.5px solid #C8E6C9', borderRadius: 16, padding: '48px 24px', textAlign: 'center', color: '#9E9E9E' }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>🌱</div>
-                No emissions data yet. Upload a CSV or ask teams to enter their data.
+                No audit data yet. Add products to begin the monitoring workflow.
               </div>
             ) : (
               (() => {
-                const grouped: Record<string, { rows: EmissionRecord[]; total: number }> = {}
+                const grouped: Record<string, { rows: EmissionRecord[]; finalTotal: number; initialTotal: number; allSubmitted: boolean }> = {}
                 for (const r of emissionsData) {
-                  if (!grouped[r.stall_no]) grouped[r.stall_no] = { rows: [], total: 0 }
+                  if (!grouped[r.stall_no]) grouped[r.stall_no] = { rows: [], finalTotal: 0, initialTotal: 0, allSubmitted: true }
                   grouped[r.stall_no].rows.push(r)
-                  grouped[r.stall_no].total += r.total_emission
+                  if (r.is_submitted) grouped[r.stall_no].finalTotal += r.total_emission
+                  if (!r.is_submitted) grouped[r.stall_no].allSubmitted = false
+                  grouped[r.stall_no].initialTotal += 0 
                 }
-                const sortedStalls = Object.entries(grouped).sort((a, b) => b[1].total - a[1].total)
+                const sortedStalls = Object.entries(grouped).sort((a, b) => b[1].finalTotal - a[1].finalTotal)
 
                 return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    {sortedStalls.map(([stall, { rows: sRows, total }]) => (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    {sortedStalls.map(([stall, { rows: sRows, finalTotal, allSubmitted }]: [string, any]) => (
                       <div key={stall} style={{ background: '#fff', border: '1.5px solid #C8E6C9', borderRadius: 16, overflow: 'hidden' }}>
-                        {/* Stall header */}
                         <div style={{
-                          padding: '14px 20px', background: '#F0F7F1',
-                          borderBottom: '1px solid #E8F5E9',
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8,
+                          padding: '14px 24px', background: '#F0F7F1', borderBottom: '1px solid #E8F5E9',
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12
                         }}>
-                          <div style={{ fontWeight: 800, fontSize: '1rem', color: '#1A3C2B' }}>🏪 {stall}</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span style={{ fontSize: '0.8rem', color: '#6B7280' }}>{sRows.length} product{sRows.length !== 1 ? 's' : ''}</span>
-                            <span style={{
-                              background: total > 100 ? '#FFEBEE' : '#E8F5E9',
-                              color: total > 100 ? '#C62828' : '#2D6A4F',
-                              borderRadius: 8, padding: '3px 12px', fontWeight: 800, fontSize: '0.85rem',
-                            }}>
-                              {total.toFixed(2)} kg CO₂e
-                            </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#1A3C2B' }}>🏪 {stall}</div>
+                            {allSubmitted ? (
+                              <span style={{ background: '#4CAF50', color: '#fff', borderRadius: 20, padding: '2px 10px', fontWeight: 700, fontSize: '0.72rem' }}>✅ SUBMITTED</span>
+                            ) : (
+                              <span style={{ background: '#BDBDBD', color: '#fff', borderRadius: 20, padding: '2px 10px', fontWeight: 700, fontSize: '0.72rem' }}>⏳ ACTIVE</span>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                             <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '0.72rem', color: '#6B7280', textTransform: 'uppercase' }}>Initial</div>
+                              <div style={{ fontWeight: 700, color: '#9E9E9E' }}>0.00</div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '0.72rem', color: '#6B7280', textTransform: 'uppercase' }}>Final</div>
+                              <div style={{ fontWeight: 800, color: finalTotal > 0 ? '#C62828' : '#9E9E9E' }}>{finalTotal.toFixed(2)}</div>
+                            </div>
                           </div>
                         </div>
-                        {/* Per-row table with full admin control */}
+
                         <div style={{ overflowX: 'auto' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                             <thead>
                               <tr style={{ background: '#FAFFFE' }}>
-                                {['Product', 'Emission / Unit', 'Quantity', 'Total', 'Status', 'Actions'].map((h) => (
-                                  <th key={h} style={{ padding: '8px 16px', textAlign: 'left', color: '#9E9E9E', fontWeight: 600, fontSize: '0.73rem', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                                {['Product', 'Emission/Unit', 'Quantity', 'Final (Submitted)', 'Verified', 'Actions'].map((h: string) => (
+                                  <th key={h} style={{ padding: '10px 20px', textAlign: 'left', color: '#9E9E9E', fontWeight: 600, fontSize: '0.73rem', textTransform: 'uppercase' }}>{h}</th>
                                 ))}
                               </tr>
                             </thead>
                             <tbody>
-                              {sRows.map((row) => {
-                                const isEditing = emEditId === row.id
-                                const rowBg = isEditing
-                                  ? '#FFF8E1'
-                                  : row.status === 'approved' ? '#F1FFF4' : '#FFFDE7'
-                                return (
-                                  <tr key={row.id} style={{ borderTop: '1px solid #E8F5E9', background: rowBg, transition: 'background 0.2s' }}>
-                                    {/* Product */}
-                                    <td style={{ padding: '8px 12px', minWidth: 140 }}>
-                                      {isEditing ? (
-                                        <input
-                                          type="text"
-                                          value={emEditVals.product}
-                                          onChange={(e) => setEmEditVals((v) => ({ ...v, product: e.target.value }))}
-                                          style={{ width: '100%', padding: '4px 8px', border: '1.5px solid #4CAF50', borderRadius: 6, fontSize: '0.85rem', outline: 'none' }}
-                                        />
+                              {sRows.map((row) => (
+                                <tr key={row.id} style={{ borderTop: '1px solid #E8F5E9', background: row.is_verified ? '#F1FFF4' : 'transparent' }}>
+                                  <td style={{ padding: '10px 20px', fontWeight: 600, color: '#1A3C2B' }}>{row.product}</td>
+                                  <td style={{ padding: '10px 20px', color: '#6B7280' }}>{row.emission_per_unit.toFixed(4)}</td>
+                                  <td style={{ padding: '10px 20px', color: '#1A3C2B' }}>{row.is_submitted ? row.quantity : '—'}</td>
+                                  <td style={{ padding: '10px 20px', fontWeight: 700, color: row.is_submitted && row.total_emission > 0 ? '#C62828' : '#9E9E9E' }}>
+                                    {row.is_submitted ? row.total_emission.toFixed(2) : '—'}
+                                  </td>
+                                  <td style={{ padding: '10px 20px' }}>
+                                    {row.is_verified ? (
+                                      <span style={{ color: '#4CAF50', fontWeight: 800 }}>✓ Verified</span>
+                                    ) : (
+                                      <span style={{ color: '#BDBDBD' }}>pending</span>
+                                    )}
+                                  </td>
+                                  <td style={{ padding: '10px 20px' }}>
+                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                      {emEditId === row.id ? (
+                                        <>
+                                          <button onClick={() => saveEmissionRow(row.id)} style={{ background: '#4CAF50', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 8px', fontSize: '0.72rem', fontWeight: 700 }}>💾</button>
+                                          <button onClick={() => setEmEditId(null)} style={{ background: '#eee', color: '#666', border: 'none', borderRadius: 6, padding: '4px 8px', fontSize: '0.72rem' }}>✕</button>
+                                        </>
                                       ) : (
-                                        <span style={{ fontWeight: 600, color: '#1A3C2B' }}>{row.product}</span>
+                                        <button onClick={() => { setEmEditId(row.id); setEmEditVals({ product: row.product, emission_per_unit: String(row.emission_per_unit), quantity: String(row.quantity) }) }} style={{ background: '#E3F2FD', color: '#1565C0', border: 'none', borderRadius: 6, padding: '4px 8px', fontSize: '0.72rem' }}>✏️</button>
                                       )}
-                                    </td>
-                                    {/* Emission per unit */}
-                                    <td style={{ padding: '8px 12px', minWidth: 110 }}>
-                                      {isEditing ? (
-                                        <input
-                                          type="number" min={0} step="any"
-                                          value={emEditVals.emission_per_unit}
-                                          onChange={(e) => setEmEditVals((v) => ({ ...v, emission_per_unit: e.target.value }))}
-                                          style={{ width: '100%', padding: '4px 8px', border: '1.5px solid #4CAF50', borderRadius: 6, fontSize: '0.85rem', outline: 'none' }}
-                                        />
+                                      
+                                      {row.is_verified ? (
+                                        <button onClick={() => markVerified(row.id, false)} style={{ background: '#fff', border: '1px solid #E0E0E0', borderRadius: 6, padding: '4px 8px', fontSize: '0.72rem', cursor: 'pointer' }}>Unmark</button>
                                       ) : (
-                                        <span style={{ color: '#6B7280' }}>{row.emission_per_unit.toFixed(4)}</span>
+                                        <button onClick={() => markVerified(row.id, true)} style={{ background: '#4CAF50', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 8px', fontSize: '0.72rem', cursor: 'pointer', fontWeight: 700 }}>Verify</button>
                                       )}
-                                    </td>
-                                    {/* Quantity */}
-                                    <td style={{ padding: '8px 12px', minWidth: 90 }}>
-                                      {isEditing ? (
-                                        <input
-                                          type="number" min={0} step="any"
-                                          value={emEditVals.quantity}
-                                          onChange={(e) => setEmEditVals((v) => ({ ...v, quantity: e.target.value }))}
-                                          style={{ width: '100%', padding: '4px 8px', border: '1.5px solid #4CAF50', borderRadius: 6, fontSize: '0.85rem', outline: 'none' }}
-                                        />
-                                      ) : (
-                                        <span style={{ color: '#6B7280' }}>{row.quantity}</span>
-                                      )}
-                                    </td>
-                                    {/* Total emission */}
-                                    <td style={{ padding: '8px 12px', fontWeight: 700, color: row.total_emission > 0 ? '#C62828' : '#9E9E9E' }}>
-                                      {row.total_emission > 0 ? row.total_emission.toFixed(2) : '—'}
-                                    </td>
-                                    {/* Status badge */}
-                                    <td style={{ padding: '8px 12px' }}>
-                                      {row.status === 'approved' ? (
-                                        <span style={{ background: '#E8F5E9', color: '#2D6A4F', borderRadius: 6, padding: '2px 8px', fontWeight: 700, fontSize: '0.75rem' }}>✅ Approved</span>
-                                      ) : (
-                                        <span style={{ background: '#FFFDE7', color: '#F57F17', borderRadius: 6, padding: '2px 8px', fontWeight: 700, fontSize: '0.75rem' }}>⏳ Pending</span>
-                                      )}
-                                    </td>
-                                    {/* Action buttons */}
-                                    <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>
-                                      <div style={{ display: 'flex', gap: 5 }}>
-                                        {isEditing ? (
-                                          <>
-                                            <button
-                                              onClick={() => saveEmissionRow(row.id)}
-                                              disabled={emActionLoading === row.id + '-save'}
-                                              style={{ background: '#4CAF50', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}
-                                            >
-                                              {emActionLoading === row.id + '-save' ? '⏳' : '💾 Save'}
-                                            </button>
-                                            <button
-                                              onClick={() => setEmEditId(null)}
-                                              style={{ background: '#F5F5F5', color: '#9E9E9E', border: 'none', borderRadius: 6, padding: '4px 10px', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer' }}
-                                            >
-                                              Cancel
-                                            </button>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <button
-                                              onClick={() => { setEmEditId(row.id); setEmEditVals({ product: row.product, emission_per_unit: String(row.emission_per_unit), quantity: String(row.quantity) }) }}
-                                              style={{ background: '#E3F2FD', color: '#1565C0', border: '1px solid #BBDEFB', borderRadius: 6, padding: '4px 8px', fontWeight: 600, fontSize: '0.73rem', cursor: 'pointer' }}
-                                            >
-                                              ✏️ Edit
-                                            </button>
-                                            {row.status === 'pending' ? (
-                                              <button
-                                                onClick={() => approveEmission(row.id)}
-                                                disabled={emActionLoading === row.id + '-approve'}
-                                                style={{ background: '#E8F5E9', color: '#2D6A4F', border: '1px solid #C8E6C9', borderRadius: 6, padding: '4px 8px', fontWeight: 700, fontSize: '0.73rem', cursor: 'pointer' }}
-                                              >
-                                                {emActionLoading === row.id + '-approve' ? '⏳' : '✅ Approve'}
-                                              </button>
-                                            ) : (
-                                              <button
-                                                onClick={() => resetEmission(row.id)}
-                                                disabled={emActionLoading === row.id + '-reset'}
-                                                style={{ background: '#FFFDE7', color: '#F57F17', border: '1px solid #FFF176', borderRadius: 6, padding: '4px 8px', fontWeight: 700, fontSize: '0.73rem', cursor: 'pointer' }}
-                                              >
-                                                {emActionLoading === row.id + '-reset' ? '⏳' : '↩️ Reset'}
-                                              </button>
-                                            )}
-                                            <button
-                                              onClick={() => deleteEmissionRow(row.id)}
-                                              disabled={emActionLoading === row.id + '-delete'}
-                                              style={{ background: '#FFEBEE', color: '#C62828', border: '1px solid #FFCDD2', borderRadius: 6, padding: '4px 8px', fontWeight: 600, fontSize: '0.73rem', cursor: 'pointer' }}
-                                            >
-                                              {emActionLoading === row.id + '-delete' ? '⏳' : '🗑'}
-                                            </button>
-                                          </>
-                                        )}
-                                      </div>
-                                    </td>
-                                  </tr>
-                                )
-                              })}
+                                      <button onClick={() => deleteEmissionRow(row.id)} style={{ background: '#FFEBEE', border: 'none', color: '#C62828', borderRadius: 6, padding: '4px 8px', fontSize: '0.72rem', cursor: 'pointer' }}>🗑</button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
                             </tbody>
-                            <tfoot>
-                              <tr style={{ background: '#F0F7F1', borderTop: '2px solid #C8E6C9' }}>
-                                <td colSpan={3} style={{ padding: '10px 16px', fontWeight: 700, color: '#1A3C2B', fontSize: '0.85rem' }}>Stall Total</td>
-                                <td style={{ padding: '10px 16px', fontWeight: 800, color: total > 0 ? '#C62828' : '#9E9E9E', fontSize: '0.95rem' }}>
-                                  {total.toFixed(2)} kg CO₂e
-                                </td>
-                                <td colSpan={2} />
-                              </tr>
-                            </tfoot>
                           </table>
                         </div>
                       </div>
