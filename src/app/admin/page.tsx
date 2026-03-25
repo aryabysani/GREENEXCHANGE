@@ -162,7 +162,7 @@ export default function AdminPage() {
     e.preventDefault()
     if (!newStall || !newProduct || !newEPU) return
     setEmActionLoading('add-new')
-    const { error } = await supabase.from('emissions_data').insert({
+    const { error } = await supabase.from('emissions_data').upsert({
       stall_no: newStall.trim(),
       product: newProduct.trim(),
       emission_per_unit: parseFloat(newEPU) || 0,
@@ -170,7 +170,7 @@ export default function AdminPage() {
       total_emission: 0,
       is_submitted: false,
       is_custom: false
-    })
+    }, { onConflict: 'stall_no,product' })
     if (error) {
       setEmissionsMsg('❌ Add failed: ' + error.message)
     } else {
@@ -303,7 +303,7 @@ export default function AdminPage() {
       return
     }
 
-    const { error } = await supabase.from('emissions_data').insert(rows)
+    const { error } = await supabase.from('emissions_data').upsert(rows, { onConflict: 'stall_no,product' })
     if (error) {
       setEmissionsMsg('❌ Upload failed: ' + error.message)
     } else {
@@ -312,6 +312,19 @@ export default function AdminPage() {
     }
     setCsvLoading(false)
     if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const resetAllEmissions = async () => {
+    if (!confirm('🚨 WARNING: THIS WILL DELETE ALL EMISSIONS DATA FOR ALL STALLS. This action cannot be undone. Proceed?')) return
+    setEmActionLoading('reset-all')
+    const { error } = await supabase.from('emissions_data').delete().neq('id', '00000000-0000-0000-0000-000000000000') // Deletes all
+    if (error) {
+      setEmissionsMsg('❌ Reset failed: ' + error.message)
+    } else {
+      setEmissionsMsg('✅ All emissions data has been wiped.')
+      await loadEmissions()
+    }
+    setEmActionLoading(null)
   }
 
   const handleLogin = (e: FormEvent) => {
@@ -850,6 +863,25 @@ export default function AdminPage() {
                 >
                   {csvLoading ? '⏳ Uploading…' : '📂 Choose CSV File'}
                 </label>
+              </div>
+
+              {/* Danger Zone */}
+              <div style={{ background: '#FFF5F5', border: '1.5px solid #FED7D7', borderRadius: 16, padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ fontWeight: 700, fontSize: '1rem', color: '#C53030', marginBottom: 4 }}>🧨 Danger Zone</div>
+                <button
+                  onClick={resetAllEmissions}
+                  disabled={emActionLoading === 'reset-all'}
+                  style={{
+                    background: '#E53E3E', color: '#fff', border: 'none', borderRadius: 10,
+                    padding: '12px', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem',
+                    transition: 'all 0.2s', opacity: emActionLoading === 'reset-all' ? 0.7 : 1
+                  }}
+                >
+                  {emActionLoading === 'reset-all' ? 'Wiping Data...' : '🗑 Reset All Data'}
+                </button>
+                <div style={{ fontSize: '0.75rem', color: '#E53E3E', textAlign: 'center' }}>
+                  This will permanently delete all records from the emissions table.
+                </div>
               </div>
             </div>
 
