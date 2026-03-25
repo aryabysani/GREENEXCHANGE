@@ -85,6 +85,7 @@ export default function EmissionsPage() {
         status: (r.status ?? 'pending') as 'pending' | 'approved',
         is_submitted: !!r.is_submitted,
         is_custom: !!r.is_custom,
+        is_verified: !!r.is_verified,
         isDirty: false,
       }))
     )
