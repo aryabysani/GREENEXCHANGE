@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 const ADMIN_USERNAME = 'admin'
 const ADMIN_PASSWORD = 'GreenAdmin@2025'
@@ -53,7 +54,7 @@ export default function AdminPage() {
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
 
-  const [tab, setTab] = useState<'profiles' | 'listings' | 'transactions'>('profiles')
+  const [tab, setTab] = useState<'profiles' | 'listings' | 'transactions' | 'emissions'>('profiles')
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [listings, setListings] = useState<Listing[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -69,6 +70,101 @@ export default function AdminPage() {
   const [selectedTeam, setSelectedTeam] = useState<{ id: string; team_username: string } | null>(null)
   const [teamTxns, setTeamTxns] = useState<TeamTransaction[]>([])
   const [teamTxnsLoading, setTeamTxnsLoading] = useState(false)
+
+  // ── Emissions state ─────────────────────────────────────
+  type EmissionRecord = {
+    id: string
+    stall_no: string
+    product: string
+    quantity: number
+    emission_per_unit: number
+    total_emission: number
+  }
+  const [emissionsData, setEmissionsData] = useState<EmissionRecord[]>([])
+  const [emissionsLoading, setEmissionsLoading] = useState(false)
+  const [csvLoading, setCsvLoading] = useState(false)
+  const [emissionsMsg, setEmissionsMsg] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const supabase = createClient()
+
+  const loadEmissions = async () => {
+    setEmissionsLoading(true)
+    const { data, error } = await supabase
+      .from('emissions_data')
+      .select('*')
+      .order('stall_no', { ascending: true })
+    if (error) {
+      setEmissionsMsg('❌ Failed to load: ' + error.message)
+    } else {
+      setEmissionsData((data ?? []).map((r) => ({
+        id: r.id,
+        stall_no: r.stall_no,
+        product: r.product,
+        quantity: Number(r.quantity),
+        emission_per_unit: Number(r.emission_per_unit),
+        total_emission: Number(r.total_emission),
+      })))
+    }
+    setEmissionsLoading(false)
+  }
+
+  // Auto-load emissions when the tab is first opened
+  useEffect(() => {
+    if (tab === 'emissions' && emissionsData.length === 0 && !emissionsLoading) {
+      loadEmissions()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab])
+
+  const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCsvLoading(true)
+    setEmissionsMsg('')
+
+    const text = await file.text()
+    const lines = text.trim().split(/\r?\n/)
+    const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''))
+
+    const stallIdx         = headers.findIndex((h) => /stallno/i.test(h.replace(/\s/g, '')))
+    const productIdx       = headers.findIndex((h) => /product/i.test(h))
+    const emissionPerIdx   = headers.findIndex((h) => /emissionperunit/i.test(h.replace(/\s/g, '')))
+
+    if (stallIdx === -1 || productIdx === -1 || emissionPerIdx === -1) {
+      setEmissionsMsg('❌ CSV must have columns: StallNo, Product, EmissionPerUnit')
+      setCsvLoading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
+    const rows = lines.slice(1).map((line) => {
+      const cols = line.split(',').map((c) => c.trim().replace(/^"|"$/g, ''))
+      return {
+        stall_no:          cols[stallIdx]       ?? '',
+        product:           cols[productIdx]     ?? '',
+        emission_per_unit: parseFloat(cols[emissionPerIdx] ?? '0') || 0,
+        quantity:          0,
+        updated_at:        new Date().toISOString(),
+      }
+    }).filter((r) => r.stall_no && r.product)
+
+    if (rows.length === 0) {
+      setEmissionsMsg('❌ No valid rows found in CSV.')
+      setCsvLoading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
+    const { error } = await supabase.from('emissions_data').insert(rows)
+    if (error) {
+      setEmissionsMsg('❌ Upload failed: ' + error.message)
+    } else {
+      setEmissionsMsg(`✅ Uploaded ${rows.length} row(s) successfully.`)
+      await loadEmissions()
+    }
+    setCsvLoading(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
@@ -212,9 +308,9 @@ export default function AdminPage() {
     setTeamTxnsLoading(false)
   }
 
-  const switchTab = (t: 'profiles' | 'listings' | 'transactions') => {
+  const switchTab = (t: 'profiles' | 'listings' | 'transactions' | 'emissions') => {
     setTab(t)
-    loadData(t)
+    if (t !== 'emissions') loadData(t as 'profiles' | 'listings' | 'transactions')
   }
 
   // ── Login screen ──────────────────────────────────────────
@@ -346,6 +442,7 @@ export default function AdminPage() {
             { key: 'profiles', label: '👥 Teams' },
             { key: 'listings', label: '📋 Listings' },
             { key: 'transactions', label: '🤝 Transactions' },
+            { key: 'emissions', label: '🌿 Emissions' },
           ] as const).map(({ key, label }) => (
             <button
               key={key}
@@ -362,7 +459,7 @@ export default function AdminPage() {
             </button>
           ))}
           <button
-            onClick={() => loadData(tab)}
+            onClick={() => tab === 'emissions' ? loadEmissions() : loadData(tab as 'profiles' | 'listings' | 'transactions')}
             style={{ padding: '9px 16px', borderRadius: 20, border: '1.5px solid #C8E6C9', background: '#fff', cursor: 'pointer', fontSize: '0.85rem', color: '#6B7280' }}
           >
             🔄 Refresh
@@ -601,6 +698,164 @@ export default function AdminPage() {
                   </tbody>
                 </table>
               </div>
+            )}
+          </div>
+        ) : tab === 'emissions' ? (
+          // ── Emissions Dashboard ──────────────────────────────
+          <div>
+            {/* Emissions message */}
+            {emissionsMsg && (
+              <div style={{
+                background: emissionsMsg.startsWith('✅') ? '#E8F5E9' : '#FFEBEE',
+                border: `1px solid ${emissionsMsg.startsWith('✅') ? '#C8E6C9' : '#FFCDD2'}`,
+                borderRadius: 10, padding: '10px 16px', marginBottom: 16,
+                fontSize: '0.9rem', color: emissionsMsg.startsWith('✅') ? '#2D6A4F' : '#C62828',
+              }}>
+                {emissionsMsg}
+              </div>
+            )}
+
+            {/* CSV Upload card */}
+            <div style={{
+              background: '#fff', border: '1.5px solid #C8E6C9', borderRadius: 16,
+              padding: '20px 24px', marginBottom: 24,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16,
+            }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1A3C2B', marginBottom: 4 }}>📤 CSV Upload</div>
+                <div style={{ fontSize: '0.82rem', color: '#6B7280' }}>Required columns: <code>StallNo, Product, EmissionPerUnit</code></div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={handleCsvUpload}
+                  disabled={csvLoading}
+                  style={{ display: 'none' }}
+                  id="em-csv-input"
+                />
+                <label
+                  htmlFor="em-csv-input"
+                  style={{
+                    background: csvLoading ? '#9E9E9E' : '#1A3C2B',
+                    color: '#fff', borderRadius: 10, padding: '9px 20px',
+                    fontWeight: 700, fontSize: '0.88rem',
+                    cursor: csvLoading ? 'not-allowed' : 'pointer',
+                    userSelect: 'none',
+                  }}
+                >
+                  {csvLoading ? '⏳ Uploading…' : '📂 Choose CSV'}
+                </label>
+              </div>
+            </div>
+
+            {/* Grand total banner */}
+            {(() => {
+              const grandTotal = emissionsData.reduce((s, r) => s + r.total_emission, 0)
+              const uniqueStalls = [...new Set(emissionsData.map((r) => r.stall_no))]
+              return (
+                <div style={{
+                  background: 'linear-gradient(135deg, #1A3C2B, #2D6A4F)',
+                  borderRadius: 16, padding: '18px 28px', marginBottom: 24,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
+                }}>
+                  <div>
+                    <div style={{ color: '#A8D5B5', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>All-Stall Total Emissions</div>
+                    <div style={{ color: '#4CAF50', fontWeight: 800, fontSize: '2rem', lineHeight: 1 }}>
+                      {grandTotal.toFixed(2)} <span style={{ fontSize: '0.95rem', color: '#A8D5B5', fontWeight: 600 }}>kg CO₂e</span>
+                    </div>
+                    <div style={{ color: '#A8D5B5', fontSize: '0.78rem', marginTop: 6 }}>
+                      {uniqueStalls.length} stall{uniqueStalls.length !== 1 ? 's' : ''} · {emissionsData.length} product row{emissionsData.length !== 1 ? 's' : ''}
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+
+            {/* Stalls grouped */}
+            {emissionsLoading ? (
+              <div style={{ textAlign: 'center', padding: 60, color: '#6B7280' }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>🌿</div>
+                Loading emissions…
+              </div>
+            ) : emissionsData.length === 0 ? (
+              <div style={{ background: '#fff', border: '1.5px solid #C8E6C9', borderRadius: 16, padding: '48px 24px', textAlign: 'center', color: '#9E9E9E' }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>🌱</div>
+                No emissions data yet. Upload a CSV or ask teams to enter their data.
+              </div>
+            ) : (
+              (() => {
+                // Group by stall_no
+                const grouped: Record<string, { rows: typeof emissionsData; total: number }> = {}
+                for (const r of emissionsData) {
+                  if (!grouped[r.stall_no]) grouped[r.stall_no] = { rows: [], total: 0 }
+                  grouped[r.stall_no].rows.push(r)
+                  grouped[r.stall_no].total += r.total_emission
+                }
+                const sortedStalls = Object.entries(grouped).sort((a, b) => b[1].total - a[1].total)
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {sortedStalls.map(([stall, { rows: sRows, total }]) => (
+                      <div key={stall} style={{ background: '#fff', border: '1.5px solid #C8E6C9', borderRadius: 16, overflow: 'hidden' }}>
+                        {/* Stall header */}
+                        <div style={{
+                          padding: '14px 20px', background: '#F0F7F1',
+                          borderBottom: '1px solid #E8F5E9',
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8,
+                        }}>
+                          <div style={{ fontWeight: 800, fontSize: '1rem', color: '#1A3C2B' }}>
+                            🏪 {stall}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{ fontSize: '0.8rem', color: '#6B7280' }}>{sRows.length} product{sRows.length !== 1 ? 's' : ''}</span>
+                            <span style={{
+                              background: total > 100 ? '#FFEBEE' : '#E8F5E9',
+                              color: total > 100 ? '#C62828' : '#2D6A4F',
+                              borderRadius: 8, padding: '3px 12px', fontWeight: 800, fontSize: '0.85rem',
+                            }}>
+                              {total.toFixed(2)} kg CO₂e
+                            </span>
+                          </div>
+                        </div>
+                        {/* Product rows */}
+                        <div style={{ overflowX: 'auto' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                            <thead>
+                              <tr style={{ background: '#FAFFFE' }}>
+                                {['Product', 'Emission / Unit', 'Quantity', 'Total Emission'].map((h) => (
+                                  <th key={h} style={{ padding: '8px 16px', textAlign: 'left', color: '#9E9E9E', fontWeight: 600, fontSize: '0.73rem', textTransform: 'uppercase' }}>{h}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {sRows.map((row, ri) => (
+                                <tr key={row.id} style={{ borderTop: '1px solid #E8F5E9', background: ri % 2 === 0 ? '#fff' : '#FAFFFE' }}>
+                                  <td style={{ padding: '10px 16px', color: '#1A3C2B', fontWeight: 600 }}>{row.product}</td>
+                                  <td style={{ padding: '10px 16px', color: '#6B7280' }}>{row.emission_per_unit.toFixed(2)}</td>
+                                  <td style={{ padding: '10px 16px', color: '#6B7280' }}>{row.quantity}</td>
+                                  <td style={{ padding: '10px 16px', fontWeight: 700, color: row.total_emission > 0 ? '#C62828' : '#9E9E9E' }}>
+                                    {row.total_emission > 0 ? row.total_emission.toFixed(2) : '—'}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot>
+                              <tr style={{ background: '#F0F7F1', borderTop: '2px solid #C8E6C9' }}>
+                                <td colSpan={3} style={{ padding: '10px 16px', fontWeight: 700, color: '#1A3C2B', fontSize: '0.85rem' }}>Stall Total</td>
+                                <td style={{ padding: '10px 16px', fontWeight: 800, color: total > 0 ? '#C62828' : '#9E9E9E', fontSize: '0.95rem' }}>
+                                  {total.toFixed(2)} kg CO₂e
+                                </td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()
             )}
           </div>
         )}
