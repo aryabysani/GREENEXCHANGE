@@ -425,7 +425,7 @@ export default function EmissionsPage() {
                   {rows.map((row, i) => (
                     <tr key={row.id} style={{ borderTop: '1px solid #E8F5E9', background: isLocked ? '#fafafa' : row.isDirty ? '#FFFDE7' : '#fff' }}>
                       <td style={{ padding: '12px 16px' }}>
-                        {!isLocked && row.is_custom ? (
+                        {!isLocked && row.is_custom && !row.is_verified ? (
                           <input
                             value={row.product}
                             onChange={(e) => updateField(i, 'product', e.target.value)}
@@ -433,13 +433,18 @@ export default function EmissionsPage() {
                             style={{ width: '100%', padding: '6px 10px', border: '1px solid #C8E6C9', borderRadius: 8 }}
                           />
                         ) : (
-                          <div style={{ fontWeight: 600, color: '#1A3C2B' }}>{row.product || '—'}</div>
+                          <div style={{ fontWeight: 600, color: '#1A3C2B' }}>
+                             {row.product || '—'}
+                             {row.is_verified && <span style={{ marginLeft: 6, color: '#4CAF50', fontSize: '0.7rem' }}>✓</span>}
+                          </div>
                         )}
-                        <div style={{ fontSize: '0.7rem', color: '#9E9E9E', marginTop: 4 }}>{row.is_custom ? 'Custom' : 'Official'}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#9E9E9E', marginTop: 4 }}>
+                          {row.is_custom ? (row.is_verified ? 'Official (Verified)' : 'Custom Item') : 'Official'}
+                        </div>
                       </td>
 
                       <td style={{ padding: '12px 16px', color: '#6B7280' }}>
-                        {!isLocked && row.is_custom ? (
+                        {!isLocked && row.is_custom && !row.is_verified ? (
                           <input
                             type="number" step="any"
                             value={row.emission_per_unit}
@@ -447,7 +452,7 @@ export default function EmissionsPage() {
                             style={{ width: 70, padding: '6px 8px', border: '1px solid #C8E6C9', borderRadius: 8 }}
                           />
                         ) : (
-                          row.emission_per_unit.toFixed(4)
+                          <span style={{ fontWeight: row.is_verified ? 600 : 400 }}>{row.emission_per_unit.toFixed(4)}</span>
                         )}
                       </td>
 
@@ -469,11 +474,15 @@ export default function EmissionsPage() {
 
                       <td style={{ padding: '12px 16px' }}>
                          {isLocked ? (
-                          <span style={{ color: '#2D6A4F', fontWeight: 700, fontSize: '0.75rem' }}>🔒 Locked</span>
+                          <span style={{ color: '#2D6A4F', fontWeight: 700, fontSize: '0.75rem' }}>🔒 Final Audit</span>
+                        ) : row.is_verified ? (
+                          <span style={{ color: '#2E7D32', fontWeight: 700, fontSize: '0.75rem' }}>✅ Verified</span>
+                        ) : row.is_custom ? (
+                          <span style={{ color: '#F9A825', fontWeight: 700, fontSize: '0.75rem' }}>⏳ Reviewing</span>
                         ) : row.isDirty ? (
                           <span style={{ color: '#E65100', fontWeight: 700, fontSize: '0.75rem' }}>✏️ Unsaved</span>
                         ) : (
-                          <span style={{ color: '#F57F17', fontWeight: 700, fontSize: '0.75rem' }}>🟢 Active</span>
+                          <span style={{ color: '#1B5E20', fontWeight: 700, fontSize: '0.75rem' }}>🟢 Active</span>
                         )}
                       </td>
 
