@@ -58,6 +58,8 @@ type EmissionRecord = {
   status: 'pending' | 'approved'
   is_submitted: boolean
   is_verified: boolean
+  is_custom: boolean
+  updated_at: string
 }
 
 export default function AdminPage() {
@@ -166,7 +168,8 @@ export default function AdminPage() {
       emission_per_unit: parseFloat(newEPU) || 0,
       quantity: 0,
       total_emission: 0,
-      is_submitted: false
+      is_submitted: false,
+      is_custom: false
     })
     if (error) {
       setEmissionsMsg('❌ Add failed: ' + error.message)
@@ -288,6 +291,7 @@ export default function AdminPage() {
         product:           cols[productIdx]     ?? '',
         emission_per_unit: parseFloat(cols[emissionPerIdx] ?? '0') || 0,
         quantity:          0,
+        is_custom:         false,
         updated_at:        new Date().toISOString(),
       }
     }).filter((r) => r.stall_no && r.product)
@@ -924,11 +928,43 @@ export default function AdminPage() {
                             <tbody>
                               {sRows.map((row) => (
                                 <tr key={row.id} style={{ borderTop: '1px solid #E8F5E9', background: row.is_verified ? '#F1FFF4' : 'transparent' }}>
-                                  <td style={{ padding: '10px 20px', fontWeight: 600, color: '#1A3C2B' }}>{row.product}</td>
-                                  <td style={{ padding: '10px 20px', color: '#6B7280' }}>{row.emission_per_unit.toFixed(4)}</td>
-                                  <td style={{ padding: '10px 20px', color: '#1A3C2B' }}>{row.is_submitted ? row.quantity : '—'}</td>
-                                  <td style={{ padding: '10px 20px', fontWeight: 700, color: row.is_submitted && row.total_emission > 0 ? '#C62828' : '#9E9E9E' }}>
-                                    {row.is_submitted ? row.total_emission.toFixed(2) : '—'}
+                                  <td style={{ padding: '10px 20px' }}>
+                                    {emEditId === row.id ? (
+                                      <input
+                                        value={emEditVals.product}
+                                        onChange={(e) => setEmEditVals((prev: any) => ({ ...prev, product: e.target.value }))}
+                                        style={{ width: '100%', padding: '4px 8px', border: '1px solid #C8E6C9', borderRadius: 6, fontSize: '0.8rem' }}
+                                      />
+                                    ) : (
+                                      <div style={{ fontWeight: 600, color: '#1A3C2B' }}>{row.product}</div>
+                                    )}
+                                  </td>
+                                  <td style={{ padding: '10px 20px', color: '#6B7280' }}>
+                                    {emEditId === row.id ? (
+                                      <input
+                                        type="number" step="any"
+                                        value={emEditVals.emission_per_unit}
+                                        onChange={(e) => setEmEditVals((prev: any) => ({ ...prev, emission_per_unit: e.target.value }))}
+                                        style={{ width: 80, padding: '4px 8px', border: '1px solid #C8E6C9', borderRadius: 6, fontSize: '0.8rem' }}
+                                      />
+                                    ) : (
+                                      row.emission_per_unit.toFixed(4)
+                                    )}
+                                  </td>
+                                  <td style={{ padding: '10px 20px', color: '#1A3C2B' }}>
+                                    {emEditId === row.id ? (
+                                      <input
+                                        type="number" step="any"
+                                        value={emEditVals.quantity}
+                                        onChange={(e) => setEmEditVals((prev: any) => ({ ...prev, quantity: e.target.value }))}
+                                        style={{ width: 80, padding: '4px 8px', border: '1px solid #C8E6C9', borderRadius: 6, fontSize: '0.8rem' }}
+                                      />
+                                    ) : (
+                                      row.quantity
+                                    )}
+                                  </td>
+                                  <td style={{ padding: '10px 20px', fontWeight: 700, color: row.total_emission > 0 ? '#C62828' : '#9E9E9E' }}>
+                                    {row.total_emission.toFixed(2)}
                                   </td>
                                   <td style={{ padding: '10px 20px' }}>
                                     {row.is_verified ? (

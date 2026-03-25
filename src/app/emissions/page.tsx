@@ -17,8 +17,8 @@ type EmissionRow = {
   total_emission: number
   status: 'pending' | 'approved'
   is_submitted: boolean
+  is_custom: boolean
   isDirty: boolean
-  isSaving: boolean
 }
 
 /* ─── Page ────────────────────────────────────────────────── */
@@ -84,8 +84,8 @@ export default function EmissionsPage() {
         total_emission: Number(r.total_emission),
         status: (r.status ?? 'pending') as 'pending' | 'approved',
         is_submitted: !!r.is_submitted,
+        is_custom: !!r.is_custom,
         isDirty: false,
-        isSaving: false,
       }))
     )
     setLoading(false)
@@ -95,64 +95,96 @@ export default function EmissionsPage() {
     if (stallNo) fetchEmissions(stallNo)
   }, [stallNo, fetchEmissions])
 
-  /* ── Quantity update (ONLY field teams can change) ──────── */
-  const updateQuantity = (index: number, raw: string) => {
+  /* ── Field updates ───────────────────────────────────────── */
+  const updateField = (index: number, field: 'product' | 'emission_per_unit' | 'quantity', val: any) => {
     setRows((prev) => {
-      const next = [...prev]
-      const r = { ...next[index] }
-      r.quantity = parseFloat(raw) || 0
-      r.total_emission = r.quantity * r.emission_per_unit
-      r.isDirty = true
-      next[index] = r
-      return next
-    })
-  }
-
-  /* ── Save a single row ──────────────────────────────────── */
-  const saveRow = async (index: number) => {
-    const r = rows[index]
-    setRows((prev) => { const n = [...prev]; n[index] = { ...n[index], isSaving: true }; return n })
-
-    const { error } = await supabase
-      .from('emissions_data')
-      .update({
-        quantity: r.quantity,
-        total_emission: r.quantity * r.emission_per_unit,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', r.id)
-
-    if (error) {
-      setGlobalMsg('❌ Save failed: ' + error.message)
-      setRows((prev) => { const n = [...prev]; n[index] = { ...n[index], isSaving: false }; return n })
-      return false
-    }
-
-    setRows((prev) => {
-      const n = [...prev]
-      n[index] = { ...n[index], isSaving: false, isDirty: false }
-      return n
-    })
-    return true
-  }
-
-  /* ── Save all dirty rows ────────────────────────────────── */
-  const saveAllRows = async () => {
-    setSaveAllLoading(true)
-    setGlobalMsg('')
-    let allSuccess = true
-    for (let i = 0; i < rows.length; i++) {
-      if (rows[i].isDirty) {
-        const success = await saveRow(i)
-        if (!success) allSuccess = false
+      const copy = [...prev]
+      const r = { ...copy[index] }
+      let newVal = val
+      if (field === 'quantity' || field === 'emission_per_unit') {
+        newVal = Number(val) || 0
       }
+      r[field] = newVal
+      r.isDirty = true
+      r.total_emission = r.quantity * r.emission_per_unit
+      copy[index] = r
+      return copy
+    })
+  }
+
+  const addCustomRow = () => {
+    if (!stallNo) return
+    setRows(prev => [
+      ...prev,
+      {
+        id: `temp-${Date.now()}`,
+        stall_no: stallNo,
+        product: '',
+        quantity: 0,
+        emission_per_unit: 0,
+        total_emission: 0,
+        status: 'pending',
+        is_submitted: false,
+        is_custom: true,
+        isDirty: true,
+      }
+    ])
+  }
+
+  const deleteRow = async (index: number) => {
+    const row = rows[index]
+    if (confirm(`Are you sure you want to delete "${row.product || 'this item'}"?`)) {
+      if (!row.id.startsWith('temp-')) {
+        const { error } = await supabase.from('emissions_data').delete().eq('id', row.id)
+        if (error) { setGlobalMsg('❌ Delete failed: ' + error.message); return }
+      }
+      setRows(prev => prev.filter((_, i) => i !== index))
     }
-    setSaveAllLoading(false)
-    if (allSuccess) {
-      setGlobalMsg('✅ All quantities saved.')
+  }
+
+  /* ── Save all changes ───────────────────────────────────── */
+  const saveAllChanges = async () => {
+    if (saveAllLoading) return
+    setSaveAllLoading(true)
+    setGlobalMsg('💾 Saving all changes…')
+
+    const dirtyRows = rows.filter(r => r.isDirty)
+    if (dirtyRows.length === 0) {
+      setGlobalMsg('✅ No changes to save.')
+      setSaveAllLoading(false)
+      setTimeout(() => setGlobalMsg(''), 2000)
+      return
+    }
+
+    try {
+      for (const r of dirtyRows) {
+        const payload: any = {
+          stall_no: r.stall_no,
+          product: r.product,
+          quantity: r.quantity,
+          emission_per_unit: r.emission_per_unit,
+          total_emission: r.total_emission,
+          is_submitted: r.is_submitted,
+          is_custom: r.is_custom,
+          updated_at: new Date().toISOString(),
+        }
+
+        if (r.id.startsWith('temp-')) {
+          const { error } = await supabase.from('emissions_data').insert(payload)
+          if (error) throw error
+        } else {
+          const { error } = await supabase.from('emissions_data').update(payload).eq('id', r.id)
+          if (error) throw error
+        }
+      }
+      setGlobalMsg('✅ Changes saved successfully!')
+      fetchEmissions(stallNo!)
+    } catch (err: any) {
+      setGlobalMsg('❌ Save error: ' + err.message)
+    } finally {
+      setSaveAllLoading(false)
       setTimeout(() => setGlobalMsg(''), 3000)
     }
-    return allSuccess
   }
 
   /* ── Final Submit ───────────────────────────────────────── */
@@ -162,10 +194,9 @@ export default function EmissionsPage() {
     setGlobalMsg('')
 
     // 1. Save any unsaved changes first
-    const saveSuccess = await saveAllRows()
-    if (!saveSuccess) {
-      setSubmitLoading(false)
-      return
+    if (rows.some(r => r.isDirty)) {
+      setGlobalMsg('💾 Saving changes before submission...')
+      await saveAllChanges()
     }
 
     // 2. Mark all as submitted
@@ -177,7 +208,7 @@ export default function EmissionsPage() {
     if (error) {
       setGlobalMsg('❌ Submission failed: ' + error.message)
     } else {
-      setRows((prev) => prev.map((r) => ({ ...r, is_submitted: true })))
+      setRows((prev) => prev.map((r) => ({ ...r, is_submitted: true, isDirty: false })))
       setGlobalMsg('🎉 Successfully submitted for final audit! Editing is now locked.')
     }
     setSubmitLoading(false)
@@ -250,8 +281,6 @@ export default function EmissionsPage() {
                   padding: '12px 14px', border: '1.5px solid #C8E6C9', borderRadius: 10,
                   fontSize: '0.95rem', outline: 'none', color: '#1A3C2B',
                 }}
-                onFocus={(e) => (e.target.style.borderColor = '#4CAF50')}
-                onBlur={(e) => (e.target.style.borderColor = '#C8E6C9')}
               />
               <button
                 type="submit"
@@ -278,12 +307,10 @@ export default function EmissionsPage() {
       <Navbar />
 
       <div className="em-page" style={{ maxWidth: 1000, margin: '0 auto', padding: '28px 24px 64px', width: '100%' }}>
-        {/* Back link */}
         <Link href="/" style={{ color: '#4CAF50', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 4, marginBottom: 20 }}>
           ← Back to Marketplace
         </Link>
 
-        {/* Header */}
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '2rem', color: '#1A3C2B', margin: '0 0 4px' }}>
             🌿 Emissions Tracker
@@ -291,12 +318,8 @@ export default function EmissionsPage() {
           <p style={{ color: '#6B7280', margin: 0, fontSize: '0.9rem' }}>
             Stall: <strong style={{ color: '#1A3C2B' }}>{stallNo}</strong> · Update your product quantities below.
           </p>
-          <p style={{ color: '#9E9E9E', margin: '4px 0 0', fontSize: '0.82rem' }}>
-            ℹ️ Product names and emission factors are set by the admin. You can only update <strong>quantities</strong>.
-          </p>
         </div>
 
-        {/* Summary card */}
         <div style={{
           background: 'linear-gradient(135deg, #1A3C2B, #2D6A4F)',
           borderRadius: 16, padding: '20px 28px', marginBottom: 20,
@@ -318,16 +341,27 @@ export default function EmissionsPage() {
               {rows.length} product{rows.length !== 1 ? 's' : ''} · {isLocked ? 'SUBMITTED' : 'NOT SUBMITTED'}
             </div>
           </div>
+
           <div style={{ display: 'flex', gap: 10 }}>
+            {!isLocked && (
+              <button
+                onClick={addCustomRow}
+                style={{
+                  background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
+                }}
+              >
+                ➕ Add Item
+              </button>
+            )}
             {!isLocked && dirtyCount > 0 && (
               <button
-                onClick={saveAllRows}
+                onClick={saveAllChanges}
                 disabled={saveAllLoading}
                 style={{
                   background: '#fff', color: '#1A3C2B', border: 'none',
                   borderRadius: 10, padding: '10px 20px', fontWeight: 700,
                   fontSize: '0.9rem', cursor: saveAllLoading ? 'not-allowed' : 'pointer',
-                  opacity: saveAllLoading ? 0.7 : 1,
                 }}
               >
                 {saveAllLoading ? '⏳ Saving…' : `💾 Save All (${dirtyCount})`}
@@ -339,9 +373,7 @@ export default function EmissionsPage() {
                 disabled={submitLoading || saveAllLoading}
                 style={{
                   background: '#4CAF50', color: '#fff', border: 'none',
-                  borderRadius: 10, padding: '10px 20px', fontWeight: 700,
-                  fontSize: '0.9rem', cursor: (submitLoading || saveAllLoading) ? 'not-allowed' : 'pointer',
-                  opacity: (submitLoading || saveAllLoading) ? 0.7 : 1,
+                  borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
                 }}
               >
                 {submitLoading ? '⏳ Submitting…' : '🚀 Submit for Final Audit'}
@@ -359,156 +391,110 @@ export default function EmissionsPage() {
           </div>
         </div>
 
-        {/* Status legend */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', color: '#6B7280' }}>
-            <span style={{ width: 12, height: 12, borderRadius: 3, background: isLocked ? '#F5F5F5' : '#FFFDE7', border: `1px solid ${isLocked ? '#E0E0E0' : '#F9A825'}`, display: 'inline-block' }} />
-            {isLocked ? 'Locked (Submitted)' : 'Editable'}
-          </div>
-        </div>
-
-        {/* Global message */}
         {globalMsg && (
           <div style={{
-            background: globalMsg.startsWith('✅') || globalMsg.startsWith('🎉') ? '#E8F5E9' : '#FFEBEE',
-            border: `1px solid ${globalMsg.startsWith('✅') || globalMsg.startsWith('🎉') ? '#C8E6C9' : '#FFCDD2'}`,
+            background: globalMsg.startsWith('✅') ? '#E8F5E9' : '#FFEBEE',
+            border: `1px solid ${globalMsg.startsWith('✅') ? '#C8E6C9' : '#FFCDD2'}`,
             borderRadius: 10, padding: '10px 16px', marginBottom: 20,
-            fontSize: '0.9rem', color: globalMsg.startsWith('✅') || globalMsg.startsWith('🎉') ? '#2D6A4F' : '#C62828',
+            fontSize: '0.9rem', color: globalMsg.startsWith('✅') ? '#2D6A4F' : '#C62828',
           }}>
             {globalMsg}
           </div>
         )}
 
-        {/* Table */}
         <div style={{ background: '#fff', border: '1.5px solid #C8E6C9', borderRadius: 16, overflow: 'hidden' }}>
           {rows.length === 0 ? (
             <div style={{ padding: '56px 24px', textAlign: 'center', color: '#9E9E9E' }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>🌱</div>
               <div style={{ fontWeight: 600, marginBottom: 6 }}>No products assigned yet</div>
-              <div style={{ fontSize: '0.87rem' }}>The admin will populate your product list. Check back soon.</div>
+              <div style={{ fontSize: '0.87rem' }}>Add a product or wait for admin assignments.</div>
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
                 <thead>
                   <tr style={{ background: '#F0F7F1' }}>
-                    {['Product', 'Emission / Unit (kg CO₂e)', 'Quantity', 'Total Emission (kg CO₂e)', 'Status', 'Action'].map((h) => (
-                      <th
-                        key={h}
-                        style={{
-                          padding: '12px 16px', textAlign: 'left',
-                          color: '#6B7280', fontWeight: 600, fontSize: '0.78rem',
-                          textTransform: 'uppercase', whiteSpace: 'nowrap',
-                        }}
-                      >
+                    {['Product', 'Emission/Unit', 'Quantity', 'Total (kg)', 'Status', 'Actions'].map((h) => (
+                      <th key={h} style={{ padding: '12px 16px', textAlign: 'left', color: '#6B7280', fontWeight: 600, fontSize: '0.78rem', textTransform: 'uppercase' }}>
                         {h}
                       </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r, i) => {
-                    const rowBg = isLocked
-                      ? '#FAFAFA'
-                      : r.isDirty
-                        ? '#FFFDE7'
-                        : '#fff'
-                    return (
-                      <tr
-                        key={r.id}
-                        style={{
-                          borderTop: '1px solid #E8F5E9',
-                          background: rowBg,
-                          transition: 'background 0.2s',
-                          opacity: isLocked ? 0.8 : 1
-                        }}
-                      >
-                        {/* Product — READ ONLY */}
-                        <td style={{ padding: '10px 16px', color: '#1A3C2B', fontWeight: 600 }}>
-                          {r.product || <span style={{ color: '#9E9E9E', fontStyle: 'italic' }}>—</span>}
-                        </td>
-
-                        {/* Emission per unit — READ ONLY */}
-                        <td style={{ padding: '10px 16px', color: '#6B7280' }}>
-                          {r.emission_per_unit.toFixed(4)}
-                        </td>
-
-                        {/* Quantity — EDITABLE (unless locked) */}
-                        <td style={{ padding: '10px 14px', minWidth: 110 }}>
+                  {rows.map((row, i) => (
+                    <tr key={row.id} style={{ borderTop: '1px solid #E8F5E9', background: isLocked ? '#fafafa' : row.isDirty ? '#FFFDE7' : '#fff' }}>
+                      <td style={{ padding: '12px 16px' }}>
+                        {!isLocked && row.is_custom ? (
                           <input
-                            type="number"
-                            min={0}
-                            step="any"
-                            value={r.quantity ?? ''}
-                            placeholder="0"
-                            onChange={(e) => updateQuantity(i, e.target.value)}
-                            disabled={isLocked}
-                            style={{
-                              width: '100%', padding: '6px 10px',
-                              border: `1.5px solid ${r.isDirty ? '#F9A825' : '#C8E6C9'}`, borderRadius: 8,
-                              fontSize: '0.88rem', color: isLocked ? '#9E9E9E' : '#1A3C2B',
-                              outline: 'none', background: isLocked ? '#F5F5F5' : 'transparent',
-                              cursor: isLocked ? 'not-allowed' : 'text',
-                            }}
-                            onFocus={(e) => !isLocked && (e.target.style.borderColor = '#4CAF50')}
-                            onBlur={(e) => !isLocked && (e.target.style.borderColor = r.isDirty ? '#F9A825' : '#C8E6C9')}
+                            value={row.product}
+                            onChange={(e) => updateField(i, 'product', e.target.value)}
+                            placeholder="Product Name"
+                            style={{ width: '100%', padding: '6px 10px', border: '1px solid #C8E6C9', borderRadius: 8 }}
                           />
-                        </td>
+                        ) : (
+                          <div style={{ fontWeight: 600, color: '#1A3C2B' }}>{row.product || '—'}</div>
+                        )}
+                        <div style={{ fontSize: '0.7rem', color: '#9E9E9E', marginTop: 4 }}>{row.is_custom ? 'Custom' : 'Official'}</div>
+                      </td>
 
-                        {/* Total emission */}
-                        <td style={{ padding: '10px 16px', fontWeight: 700, color: r.total_emission > 0 ? '#C62828' : '#9E9E9E' }}>
-                          {r.total_emission > 0 ? r.total_emission.toFixed(2) : '—'}
-                        </td>
+                      <td style={{ padding: '12px 16px', color: '#6B7280' }}>
+                        {!isLocked && row.is_custom ? (
+                          <input
+                            type="number" step="any"
+                            value={row.emission_per_unit}
+                            onChange={(e) => updateField(i, 'emission_per_unit', e.target.value)}
+                            style={{ width: 70, padding: '6px 8px', border: '1px solid #C8E6C9', borderRadius: 8 }}
+                          />
+                        ) : (
+                          row.emission_per_unit.toFixed(4)
+                        )}
+                      </td>
 
-                        {/* Status badge */}
-                        <td style={{ padding: '10px 16px' }}>
-                          {isLocked ? (
-                            <span style={{ background: '#E8F5E9', color: '#2D6A4F', borderRadius: 6, padding: '3px 10px', fontWeight: 700, fontSize: '0.75rem' }}>
-                              🔒 Submitted
-                            </span>
-                          ) : r.isDirty ? (
-                            <span style={{ background: '#FFF3E0', color: '#E65100', borderRadius: 6, padding: '3px 10px', fontWeight: 700, fontSize: '0.75rem' }}>
-                              ✏️ Unsaved
-                            </span>
-                          ) : (
-                            <span style={{ background: '#FFFDE7', color: '#F57F17', borderRadius: 6, padding: '3px 10px', fontWeight: 700, fontSize: '0.75rem' }}>
-                              🟢 Active
-                            </span>
-                          )}
-                        </td>
+                      <td style={{ padding: '12px 14px' }}>
+                        <input
+                          type="number" min={0} step="any"
+                          value={row.quantity ?? ''}
+                          onChange={(e) => updateField(i, 'quantity', e.target.value)}
+                          disabled={isLocked}
+                          style={{
+                            width: 80, padding: '6px 10px',
+                            border: `1.5px solid ${row.isDirty ? '#F9A825' : '#C8E6C9'}`, borderRadius: 8,
+                            background: isLocked ? '#f5f5f5' : 'transparent',
+                          }}
+                        />
+                      </td>
 
-                        {/* Save button */}
-                        <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
-                          {!isLocked && r.isDirty && (
-                            <button
-                              onClick={() => saveRow(i)}
-                              disabled={r.isSaving}
-                              style={{
-                                background: '#4CAF50', color: '#fff', border: 'none',
-                                borderRadius: 7, padding: '5px 12px', fontWeight: 700,
-                                fontSize: '0.78rem', cursor: r.isSaving ? 'not-allowed' : 'pointer',
-                                opacity: r.isSaving ? 0.6 : 1,
-                              }}
-                            >
-                              {r.isSaving ? '⏳' : '💾 Save'}
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
+                      <td style={{ padding: '12px 16px', fontWeight: 700 }}>{row.total_emission.toFixed(2)}</td>
+
+                      <td style={{ padding: '12px 16px' }}>
+                         {isLocked ? (
+                          <span style={{ color: '#2D6A4F', fontWeight: 700, fontSize: '0.75rem' }}>🔒 Locked</span>
+                        ) : row.isDirty ? (
+                          <span style={{ color: '#E65100', fontWeight: 700, fontSize: '0.75rem' }}>✏️ Unsaved</span>
+                        ) : (
+                          <span style={{ color: '#F57F17', fontWeight: 700, fontSize: '0.75rem' }}>🟢 Active</span>
+                        )}
+                      </td>
+
+                      <td style={{ padding: '12px 16px' }}>
+                        {!isLocked && row.is_custom && (
+                          <button
+                            onClick={() => deleteRow(i)}
+                            style={{ background: '#FFEBEE', color: '#C62828', border: 'none', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}
+                          >
+                            🗑 Delete
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           )}
         </div>
       </div>
-
-      <style jsx>{`
-        @media (max-width: 640px) {
-          .em-page { padding: 16px 12px 48px !important; }
-        }
-      `}</style>
       <Footer />
     </div>
   )
