@@ -55,6 +55,7 @@ type EmissionRecord = {
   quantity: number
   emission_per_unit: number
   total_emission: number
+  status: 'pending' | 'approved'
 }
 
 export default function AdminPage() {
@@ -85,6 +86,9 @@ export default function AdminPage() {
   const [emissionsLoading, setEmissionsLoading] = useState(false)
   const [csvLoading, setCsvLoading] = useState(false)
   const [emissionsMsg, setEmissionsMsg] = useState('')
+  const [emEditId, setEmEditId] = useState<string | null>(null)   // row being inline-edited
+  const [emEditVals, setEmEditVals] = useState<{ product: string; emission_per_unit: string; quantity: string }>({ product: '', emission_per_unit: '', quantity: '' })
+  const [emActionLoading, setEmActionLoading] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
@@ -104,9 +108,88 @@ export default function AdminPage() {
         quantity: Number(r.quantity),
         emission_per_unit: Number(r.emission_per_unit),
         total_emission: Number(r.total_emission),
+        status: (r.status ?? 'pending') as 'pending' | 'approved',
       })))
     }
     setEmissionsLoading(false)
+  }
+
+  // Approve a single row
+  const approveEmission = async (id: string) => {
+    setEmActionLoading(id + '-approve')
+    const { error } = await supabase
+      .from('emissions_data')
+      .update({ status: 'approved', updated_at: new Date().toISOString() })
+      .eq('id', id)
+    if (error) {
+      setEmissionsMsg('❌ Approve failed: ' + error.message)
+    } else {
+      setEmissionsData((prev) => prev.map((r) => r.id === id ? { ...r, status: 'approved' } : r))
+      setEmissionsMsg('✅ Row approved.')
+      setTimeout(() => setEmissionsMsg(''), 2500)
+    }
+    setEmActionLoading(null)
+  }
+
+  // Reset a row back to pending
+  const resetEmission = async (id: string) => {
+    setEmActionLoading(id + '-reset')
+    const { error } = await supabase
+      .from('emissions_data')
+      .update({ status: 'pending', updated_at: new Date().toISOString() })
+      .eq('id', id)
+    if (error) {
+      setEmissionsMsg('❌ Reset failed: ' + error.message)
+    } else {
+      setEmissionsData((prev) => prev.map((r) => r.id === id ? { ...r, status: 'pending' } : r))
+      setEmissionsMsg('✅ Row reset to pending.')
+      setTimeout(() => setEmissionsMsg(''), 2500)
+    }
+    setEmActionLoading(null)
+  }
+
+  // Admin inline save (product + emission_per_unit + quantity)
+  const saveEmissionRow = async (id: string) => {
+    setEmActionLoading(id + '-save')
+    const qty = parseFloat(emEditVals.quantity) || 0
+    const epu = parseFloat(emEditVals.emission_per_unit) || 0
+    const total = qty * epu
+    const { error } = await supabase
+      .from('emissions_data')
+      .update({
+        product: emEditVals.product.trim(),
+        emission_per_unit: epu,
+        quantity: qty,
+        total_emission: total,
+        status: 'pending',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+    if (error) {
+      setEmissionsMsg('❌ Save failed: ' + error.message)
+    } else {
+      setEmissionsData((prev) => prev.map((r) =>
+        r.id === id
+          ? { ...r, product: emEditVals.product.trim(), emission_per_unit: epu, quantity: qty, total_emission: total, status: 'pending' }
+          : r
+      ))
+      setEmEditId(null)
+      setEmissionsMsg('✅ Row updated (status reset to pending).')
+      setTimeout(() => setEmissionsMsg(''), 3000)
+    }
+    setEmActionLoading(null)
+  }
+
+  // Delete an emission row
+  const deleteEmissionRow = async (id: string) => {
+    setEmActionLoading(id + '-delete')
+    const { error } = await supabase.from('emissions_data').delete().eq('id', id)
+    if (error) {
+      setEmissionsMsg('❌ Delete failed: ' + error.message)
+    } else {
+      setEmissionsData((prev) => prev.filter((r) => r.id !== id))
+    }
+    setEmActionLoading(null)
   }
 
   // Auto-load emissions when the tab is first opened
@@ -708,9 +791,9 @@ export default function AdminPage() {
                     <div style={{ color: '#A8D5B5', fontSize: '0.78rem', marginTop: 6 }}>
                       {uniqueStalls.length} stall{uniqueStalls.length !== 1 ? 's' : ''} · {emissionsData.length} product row{emissionsData.length !== 1 ? 's' : ''}
                     </div>
-                  </div>
-                </div>
-              )
+                   </div>
+                 </div>
+               )
             })()}
 
             {/* Stalls grouped */}
@@ -726,8 +809,7 @@ export default function AdminPage() {
               </div>
             ) : (
               (() => {
-                // Group by stall_no
-                const grouped: Record<string, { rows: typeof emissionsData; total: number }> = {}
+                const grouped: Record<string, { rows: EmissionRecord[]; total: number }> = {}
                 for (const r of emissionsData) {
                   if (!grouped[r.stall_no]) grouped[r.stall_no] = { rows: [], total: 0 }
                   grouped[r.stall_no].rows.push(r)
@@ -745,9 +827,7 @@ export default function AdminPage() {
                           borderBottom: '1px solid #E8F5E9',
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8,
                         }}>
-                          <div style={{ fontWeight: 800, fontSize: '1rem', color: '#1A3C2B' }}>
-                            🏪 {stall}
-                          </div>
+                          <div style={{ fontWeight: 800, fontSize: '1rem', color: '#1A3C2B' }}>🏪 {stall}</div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <span style={{ fontSize: '0.8rem', color: '#6B7280' }}>{sRows.length} product{sRows.length !== 1 ? 's' : ''}</span>
                             <span style={{
@@ -759,27 +839,133 @@ export default function AdminPage() {
                             </span>
                           </div>
                         </div>
-                        {/* Product rows */}
+                        {/* Per-row table with full admin control */}
                         <div style={{ overflowX: 'auto' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                             <thead>
                               <tr style={{ background: '#FAFFFE' }}>
-                                {['Product', 'Emission / Unit', 'Quantity', 'Total Emission'].map((h) => (
-                                  <th key={h} style={{ padding: '8px 16px', textAlign: 'left', color: '#9E9E9E', fontWeight: 600, fontSize: '0.73rem', textTransform: 'uppercase' }}>{h}</th>
+                                {['Product', 'Emission / Unit', 'Quantity', 'Total', 'Status', 'Actions'].map((h) => (
+                                  <th key={h} style={{ padding: '8px 16px', textAlign: 'left', color: '#9E9E9E', fontWeight: 600, fontSize: '0.73rem', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
                                 ))}
                               </tr>
                             </thead>
                             <tbody>
-                              {sRows.map((row, ri) => (
-                                <tr key={row.id} style={{ borderTop: '1px solid #E8F5E9', background: ri % 2 === 0 ? '#fff' : '#FAFFFE' }}>
-                                  <td style={{ padding: '10px 16px', color: '#1A3C2B', fontWeight: 600 }}>{row.product}</td>
-                                  <td style={{ padding: '10px 16px', color: '#6B7280' }}>{row.emission_per_unit.toFixed(2)}</td>
-                                  <td style={{ padding: '10px 16px', color: '#6B7280' }}>{row.quantity}</td>
-                                  <td style={{ padding: '10px 16px', fontWeight: 700, color: row.total_emission > 0 ? '#C62828' : '#9E9E9E' }}>
-                                    {row.total_emission > 0 ? row.total_emission.toFixed(2) : '—'}
-                                  </td>
-                                </tr>
-                              ))}
+                              {sRows.map((row) => {
+                                const isEditing = emEditId === row.id
+                                const rowBg = isEditing
+                                  ? '#FFF8E1'
+                                  : row.status === 'approved' ? '#F1FFF4' : '#FFFDE7'
+                                return (
+                                  <tr key={row.id} style={{ borderTop: '1px solid #E8F5E9', background: rowBg, transition: 'background 0.2s' }}>
+                                    {/* Product */}
+                                    <td style={{ padding: '8px 12px', minWidth: 140 }}>
+                                      {isEditing ? (
+                                        <input
+                                          type="text"
+                                          value={emEditVals.product}
+                                          onChange={(e) => setEmEditVals((v) => ({ ...v, product: e.target.value }))}
+                                          style={{ width: '100%', padding: '4px 8px', border: '1.5px solid #4CAF50', borderRadius: 6, fontSize: '0.85rem', outline: 'none' }}
+                                        />
+                                      ) : (
+                                        <span style={{ fontWeight: 600, color: '#1A3C2B' }}>{row.product}</span>
+                                      )}
+                                    </td>
+                                    {/* Emission per unit */}
+                                    <td style={{ padding: '8px 12px', minWidth: 110 }}>
+                                      {isEditing ? (
+                                        <input
+                                          type="number" min={0} step="any"
+                                          value={emEditVals.emission_per_unit}
+                                          onChange={(e) => setEmEditVals((v) => ({ ...v, emission_per_unit: e.target.value }))}
+                                          style={{ width: '100%', padding: '4px 8px', border: '1.5px solid #4CAF50', borderRadius: 6, fontSize: '0.85rem', outline: 'none' }}
+                                        />
+                                      ) : (
+                                        <span style={{ color: '#6B7280' }}>{row.emission_per_unit.toFixed(4)}</span>
+                                      )}
+                                    </td>
+                                    {/* Quantity */}
+                                    <td style={{ padding: '8px 12px', minWidth: 90 }}>
+                                      {isEditing ? (
+                                        <input
+                                          type="number" min={0} step="any"
+                                          value={emEditVals.quantity}
+                                          onChange={(e) => setEmEditVals((v) => ({ ...v, quantity: e.target.value }))}
+                                          style={{ width: '100%', padding: '4px 8px', border: '1.5px solid #4CAF50', borderRadius: 6, fontSize: '0.85rem', outline: 'none' }}
+                                        />
+                                      ) : (
+                                        <span style={{ color: '#6B7280' }}>{row.quantity}</span>
+                                      )}
+                                    </td>
+                                    {/* Total emission */}
+                                    <td style={{ padding: '8px 12px', fontWeight: 700, color: row.total_emission > 0 ? '#C62828' : '#9E9E9E' }}>
+                                      {row.total_emission > 0 ? row.total_emission.toFixed(2) : '—'}
+                                    </td>
+                                    {/* Status badge */}
+                                    <td style={{ padding: '8px 12px' }}>
+                                      {row.status === 'approved' ? (
+                                        <span style={{ background: '#E8F5E9', color: '#2D6A4F', borderRadius: 6, padding: '2px 8px', fontWeight: 700, fontSize: '0.75rem' }}>✅ Approved</span>
+                                      ) : (
+                                        <span style={{ background: '#FFFDE7', color: '#F57F17', borderRadius: 6, padding: '2px 8px', fontWeight: 700, fontSize: '0.75rem' }}>⏳ Pending</span>
+                                      )}
+                                    </td>
+                                    {/* Action buttons */}
+                                    <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>
+                                      <div style={{ display: 'flex', gap: 5 }}>
+                                        {isEditing ? (
+                                          <>
+                                            <button
+                                              onClick={() => saveEmissionRow(row.id)}
+                                              disabled={emActionLoading === row.id + '-save'}
+                                              style={{ background: '#4CAF50', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}
+                                            >
+                                              {emActionLoading === row.id + '-save' ? '⏳' : '💾 Save'}
+                                            </button>
+                                            <button
+                                              onClick={() => setEmEditId(null)}
+                                              style={{ background: '#F5F5F5', color: '#9E9E9E', border: 'none', borderRadius: 6, padding: '4px 10px', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer' }}
+                                            >
+                                              Cancel
+                                            </button>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <button
+                                              onClick={() => { setEmEditId(row.id); setEmEditVals({ product: row.product, emission_per_unit: String(row.emission_per_unit), quantity: String(row.quantity) }) }}
+                                              style={{ background: '#E3F2FD', color: '#1565C0', border: '1px solid #BBDEFB', borderRadius: 6, padding: '4px 8px', fontWeight: 600, fontSize: '0.73rem', cursor: 'pointer' }}
+                                            >
+                                              ✏️ Edit
+                                            </button>
+                                            {row.status === 'pending' ? (
+                                              <button
+                                                onClick={() => approveEmission(row.id)}
+                                                disabled={emActionLoading === row.id + '-approve'}
+                                                style={{ background: '#E8F5E9', color: '#2D6A4F', border: '1px solid #C8E6C9', borderRadius: 6, padding: '4px 8px', fontWeight: 700, fontSize: '0.73rem', cursor: 'pointer' }}
+                                              >
+                                                {emActionLoading === row.id + '-approve' ? '⏳' : '✅ Approve'}
+                                              </button>
+                                            ) : (
+                                              <button
+                                                onClick={() => resetEmission(row.id)}
+                                                disabled={emActionLoading === row.id + '-reset'}
+                                                style={{ background: '#FFFDE7', color: '#F57F17', border: '1px solid #FFF176', borderRadius: 6, padding: '4px 8px', fontWeight: 700, fontSize: '0.73rem', cursor: 'pointer' }}
+                                              >
+                                                {emActionLoading === row.id + '-reset' ? '⏳' : '↩️ Reset'}
+                                              </button>
+                                            )}
+                                            <button
+                                              onClick={() => deleteEmissionRow(row.id)}
+                                              disabled={emActionLoading === row.id + '-delete'}
+                                              style={{ background: '#FFEBEE', color: '#C62828', border: '1px solid #FFCDD2', borderRadius: 6, padding: '4px 8px', fontWeight: 600, fontSize: '0.73rem', cursor: 'pointer' }}
+                                            >
+                                              {emActionLoading === row.id + '-delete' ? '⏳' : '🗑'}
+                                            </button>
+                                          </>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )
+                              })}
                             </tbody>
                             <tfoot>
                               <tr style={{ background: '#F0F7F1', borderTop: '2px solid #C8E6C9' }}>
@@ -787,6 +973,7 @@ export default function AdminPage() {
                                 <td style={{ padding: '10px 16px', fontWeight: 800, color: total > 0 ? '#C62828' : '#9E9E9E', fontSize: '0.95rem' }}>
                                   {total.toFixed(2)} kg CO₂e
                                 </td>
+                                <td colSpan={2} />
                               </tr>
                             </tfoot>
                           </table>
