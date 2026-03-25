@@ -970,6 +970,11 @@ export default function AdminPage() {
                                     ) : (
                                       <div style={{ fontWeight: 600, color: '#1A3C2B' }}>{row.product}</div>
                                     )}
+                                    {row.is_custom && (
+                                      <div style={{ fontSize: '0.65rem', fontWeight: 600, color: row.is_verified ? '#2E7D32' : '#E65100', marginTop: 2 }}>
+                                        {row.is_verified ? '✓ CUSTOM (VERIFIED)' : '⚠ PENDING REVIEW'}
+                                      </div>
+                                    )}
                                   </td>
                                   <td style={{ padding: '10px 20px', color: '#6B7280' }}>
                                     {emEditId === row.id ? (
