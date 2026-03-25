@@ -48,6 +48,15 @@ type TeamTransaction = {
   role: 'seller' | 'buyer'
 }
 
+type EmissionRecord = {
+  id: string
+  stall_no: string
+  product: string
+  quantity: number
+  emission_per_unit: number
+  total_emission: number
+}
+
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
   const [username, setUsername] = useState('')
@@ -72,14 +81,6 @@ export default function AdminPage() {
   const [teamTxnsLoading, setTeamTxnsLoading] = useState(false)
 
   // ── Emissions state ─────────────────────────────────────
-  type EmissionRecord = {
-    id: string
-    stall_no: string
-    product: string
-    quantity: number
-    emission_per_unit: number
-    total_emission: number
-  }
   const [emissionsData, setEmissionsData] = useState<EmissionRecord[]>([])
   const [emissionsLoading, setEmissionsLoading] = useState(false)
   const [csvLoading, setCsvLoading] = useState(false)
