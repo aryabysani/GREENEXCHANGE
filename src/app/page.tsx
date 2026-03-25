@@ -202,7 +202,10 @@ export default function HomePage() {
                   <p style={{ color: '#4A7C5E', fontSize: '0.8rem', marginTop: 10 }}>Sign in with your team to access trading</p>
                 </div>
               ) : tradingActive && (
-                <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
+                 <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
+                  <Link href="/emissions" style={{ background: 'linear-gradient(135deg, #1A3C2B, #2D6A4F)', color: '#fff', padding: '11px 24px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '0.9rem', boxShadow: '0 4px 16px rgba(26,60,43,0.25)' }}>
+                    🌿 Emissions Tracker
+                  </Link>
                   <Link href="/sell" style={{ background: 'linear-gradient(135deg, #2E7D32, #4CAF50)', color: '#fff', padding: '11px 24px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '0.9rem', boxShadow: '0 4px 16px rgba(76,175,80,0.25)' }}>
                     ♻️ Sell Credits
                   </Link>

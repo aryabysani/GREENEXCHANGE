@@ -62,17 +62,21 @@ export default function Navbar() {
 
         {/* Desktop links */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 28 }} className="desktop-nav">
-          {[
+           {[
             { href: '/', label: 'Marketplace' },
+            { href: '/emissions', label: '🌿 Emissions', authRequired: true },
             { href: '/how-it-works', label: 'How It Works' },
-          ].map(({ href, label }) => (
-            <Link key={href} href={href} style={{
-              color: navActive(href) ? '#4CAF50' : '#1A3C2B',
-              fontWeight: navActive(href) ? 600 : 400,
-              textDecoration: 'none',
-              fontSize: '0.95rem',
-            }}>{label}</Link>
-          ))}
+          ].map(({ href, label, authRequired }) => {
+            if (authRequired && !user) return null
+            return (
+              <Link key={href} href={href} style={{
+                color: navActive(href) ? '#4CAF50' : '#1A3C2B',
+                fontWeight: navActive(href) ? 600 : 400,
+                textDecoration: 'none',
+                fontSize: '0.95rem',
+              }}>{label}</Link>
+            )
+          })}
         </div>
 
         {/* Desktop auth area */}
@@ -121,8 +125,9 @@ export default function Navbar() {
                     boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
                     zIndex: 200, overflow: 'hidden',
                   }}>
-                    {[
+                     {[
                       { href: '/my-orders', label: 'My Orders' },
+                      { href: '/emissions', label: '🌿 Emissions Tracker' },
                       { href: '/profile', label: 'Profile' },
                     ].map(item => (
                       <Link key={item.href} href={item.href}
@@ -232,10 +237,11 @@ export default function Navbar() {
 
           {/* Nav links */}
           <div style={{ border: '1px solid #E8F5E9', borderRadius: 14, overflow: 'hidden' }}>
-            {[
+             {[
               { href: '/', label: 'Marketplace' },
               { href: '/how-it-works', label: 'How It Works' },
               ...(user ? [
+                { href: '/emissions', label: '🌿 Emissions Tracker' },
                 { href: '/my-orders', label: 'My Orders' },
                 { href: '/profile', label: 'Profile' },
               ] : []),
