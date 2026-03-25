@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const ADMIN_USERNAME = 'admin'
@@ -117,7 +117,7 @@ export default function AdminPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab])
 
-  const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCsvUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     setCsvLoading(true)
@@ -167,7 +167,7 @@ export default function AdminPage() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = (e: FormEvent) => {
     e.preventDefault()
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
       setAuthed(true)
@@ -640,67 +640,6 @@ export default function AdminPage() {
               </table>
             </div>
           </div>
-        ) : (
-          // ── Transactions table ──
-          <div style={{ background: '#fff', border: '1.5px solid #C8E6C9', borderRadius: 16, overflow: 'hidden' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #E8F5E9', fontWeight: 700, color: '#1A3C2B' }}>
-              {transactions.length} Transactions
-            </div>
-            {transactions.length === 0 ? (
-              <div style={{ padding: '48px', textAlign: 'center', color: '#9E9E9E' }}>
-                No transactions yet. Trades appear here automatically when buy and sell orders match.
-              </div>
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.87rem' }}>
-                  <thead>
-                    <tr style={{ background: '#F0F7F1' }}>
-                      {['#', 'Seller', 'Buyer', 'Credits Traded', 'Amount (₹)', 'Date & Time', ''].map(h => (
-                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#6B7280', fontWeight: 600, fontSize: '0.78rem', textTransform: 'uppercase' }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {transactions.map((t, i) => (
-                      <tr key={t.id} style={{ borderTop: '1px solid #E8F5E9', background: t.reversed ? '#FFF8F8' : i % 2 === 0 ? '#fff' : '#FAFFFE', opacity: t.reversed ? 0.6 : 1 }}>
-                        <td style={{ padding: '12px 16px', color: '#9E9E9E', fontSize: '0.8rem' }}>{transactions.length - i}</td>
-                        <td style={{ padding: '12px 16px', fontWeight: 700, color: '#C62828', fontFamily: 'monospace', textDecoration: t.reversed ? 'line-through' : 'none' }}>
-                          {t.seller_username}
-                        </td>
-                        <td style={{ padding: '12px 16px', fontWeight: 700, color: '#2D6A4F', fontFamily: 'monospace', textDecoration: t.reversed ? 'line-through' : 'none' }}>
-                          {t.buyer_username}
-                        </td>
-                        <td style={{ padding: '12px 16px' }}>
-                          <span style={{ background: '#E8F5E9', color: '#2D6A4F', borderRadius: 6, padding: '2px 10px', fontWeight: 700, textDecoration: t.reversed ? 'line-through' : 'none' }}>
-                            ♻️ {t.credits_amount} credits
-                          </span>
-                        </td>
-                        <td style={{ padding: '12px 16px', fontWeight: 700, color: '#4CAF50', textDecoration: t.reversed ? 'line-through' : 'none' }}>
-                          {t.total_price != null ? `₹${Number(t.total_price).toFixed(0)}` : '—'}
-                        </td>
-                        <td style={{ padding: '12px 16px', color: '#6B7280', fontSize: '0.82rem' }}>
-                          {new Date(t.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
-                        </td>
-                        <td style={{ padding: '12px 16px' }}>
-                          {t.reversed ? (
-                            <span style={{ background: '#FFEBEE', color: '#C62828', borderRadius: 6, padding: '2px 8px', fontSize: '0.75rem', fontWeight: 700 }}>REVERSED</span>
-                          ) : (
-                            <button
-                              onClick={() => handleAction('reverse-transaction', t.id, `Reverse transaction #${transactions.length - i}?`)}
-                              disabled={actionLoading === t.id + 'reverse-transaction'}
-                              style={{ background: '#FFF3E0', color: '#E65100', border: '1px solid #FFE082', borderRadius: 6, padding: '4px 10px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
-                            >
-                              ↩️ Reverse
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
         ) : tab === 'emissions' ? (
           // ── Emissions Dashboard ──────────────────────────────
           <div>
@@ -754,7 +693,7 @@ export default function AdminPage() {
             {/* Grand total banner */}
             {(() => {
               const grandTotal = emissionsData.reduce((s, r) => s + r.total_emission, 0)
-              const uniqueStalls = [...new Set(emissionsData.map((r) => r.stall_no))]
+              const uniqueStalls = Array.from(new Set(emissionsData.map((r) => r.stall_no)))
               return (
                 <div style={{
                   background: 'linear-gradient(135deg, #1A3C2B, #2D6A4F)',
@@ -857,6 +796,67 @@ export default function AdminPage() {
                   </div>
                 )
               })()
+            )}
+          </div>
+        ) : (
+          // ── Transactions table ──
+          <div style={{ background: '#fff', border: '1.5px solid #C8E6C9', borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #E8F5E9', fontWeight: 700, color: '#1A3C2B' }}>
+              {transactions.length} Transactions
+            </div>
+            {transactions.length === 0 ? (
+              <div style={{ padding: '48px', textAlign: 'center', color: '#9E9E9E' }}>
+                No transactions yet. Trades appear here automatically when buy and sell orders match.
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.87rem' }}>
+                  <thead>
+                    <tr style={{ background: '#F0F7F1' }}>
+                      {['#', 'Seller', 'Buyer', 'Credits Traded', 'Amount (₹)', 'Date & Time', ''].map(h => (
+                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#6B7280', fontWeight: 600, fontSize: '0.78rem', textTransform: 'uppercase' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {transactions.map((t, i) => (
+                      <tr key={t.id} style={{ borderTop: '1px solid #E8F5E9', background: t.reversed ? '#FFF8F8' : i % 2 === 0 ? '#fff' : '#FAFFFE', opacity: t.reversed ? 0.6 : 1 }}>
+                        <td style={{ padding: '12px 16px', color: '#9E9E9E', fontSize: '0.8rem' }}>{transactions.length - i}</td>
+                        <td style={{ padding: '12px 16px', fontWeight: 700, color: '#C62828', fontFamily: 'monospace', textDecoration: t.reversed ? 'line-through' : 'none' }}>
+                          {t.seller_username}
+                        </td>
+                        <td style={{ padding: '12px 16px', fontWeight: 700, color: '#2D6A4F', fontFamily: 'monospace', textDecoration: t.reversed ? 'line-through' : 'none' }}>
+                          {t.buyer_username}
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <span style={{ background: '#E8F5E9', color: '#2D6A4F', borderRadius: 6, padding: '2px 10px', fontWeight: 700, textDecoration: t.reversed ? 'line-through' : 'none' }}>
+                            ♻️ {t.credits_amount} credits
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 16px', fontWeight: 700, color: '#4CAF50', textDecoration: t.reversed ? 'line-through' : 'none' }}>
+                          {t.total_price != null ? `₹${Number(t.total_price).toFixed(0)}` : '—'}
+                        </td>
+                        <td style={{ padding: '12px 16px', color: '#6B7280', fontSize: '0.82rem' }}>
+                          {new Date(t.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          {t.reversed ? (
+                            <span style={{ background: '#FFEBEE', color: '#C62828', borderRadius: 6, padding: '2px 8px', fontSize: '0.75rem', fontWeight: 700 }}>REVERSED</span>
+                          ) : (
+                            <button
+                              onClick={() => handleAction('reverse-transaction', t.id, `Reverse transaction #${transactions.length - i}?`)}
+                              disabled={actionLoading === t.id + 'reverse-transaction'}
+                              style={{ background: '#FFF3E0', color: '#E65100', border: '1px solid #FFE082', borderRadius: 6, padding: '4px 10px', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
+                            >
+                              ↩️ Reverse
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         )}
