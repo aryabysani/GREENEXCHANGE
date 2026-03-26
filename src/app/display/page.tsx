@@ -152,8 +152,7 @@ export default function DisplayPage() {
           <div style={{ color: '#888', fontWeight: 600, fontSize: '1.2rem' }}>ECOXCHANGE 2026 • CARBON TRADING FLOOR</div>
         </div>
         <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '1rem', color: '#4CAF50', fontWeight: 800 }}>● REAL-TIME DATA STREAM</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700, fontFamily: 'monospace', color: '#fff' }}>{new Date().toLocaleTimeString()}</div>
+            <div style={{ fontSize: '1rem', color: '#4CAF50', fontWeight: 800 }}>● ACTIVE MARKET FEED</div>
         </div>
       </div>
 
@@ -226,12 +225,11 @@ export default function DisplayPage() {
         <h2 style={{ color: '#FFB74D', margin: '0 0 16px', fontSize: '2rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
            ⚡ LIVE TRADE STREAM
         </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 1fr 0.8fr 1.2fr', gap: '10px', paddingBottom: '12px', borderBottom: '1px solid #444', color: '#888', fontWeight: 700, fontSize: '1.2rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 1fr 1fr', gap: '10px', paddingBottom: '12px', borderBottom: '1px solid #444', color: '#888', fontWeight: 700, fontSize: '1.2rem' }}>
             <div>BUYER</div>
             <div>SELLER</div>
             <div style={{ textAlign: 'right' }}>CREDITS</div>
             <div style={{ textAlign: 'right' }}>PRICE</div>
-            <div style={{ textAlign: 'right' }}>TIME</div>
         </div>
         <div style={{ flex: 1, overflowY: 'hidden' }}>
           {trades.map((t) => (
@@ -240,7 +238,7 @@ export default function DisplayPage() {
               className={highlightTradeId === t.id ? 'highlight-trade' : ''}
               style={{ 
                 display: 'grid', 
-                gridTemplateColumns: '1.5fr 1.5fr 1fr 0.8fr 1.2fr', 
+                gridTemplateColumns: '1.5fr 1.5fr 1fr 1fr', 
                 padding: '18px 0', 
                 borderBottom: '1px solid #222',
                 fontSize: '1.6rem',
@@ -256,7 +254,6 @@ export default function DisplayPage() {
               <div style={{ color: '#81C784' }}>{t.seller_name}</div>
               <div style={{ textAlign: 'right' }}>{t.credits_amount} <span style={{ fontSize: '0.8rem', color: '#666' }}>CR</span></div>
               <div style={{ textAlign: 'right', color: '#FFB74D' }}>₹{Number(t.price_per_credit).toFixed(0)}</div>
-              <div style={{ textAlign: 'right', color: '#444', fontSize: '1.2rem' }}>{new Date(t.created_at).toLocaleTimeString()}</div>
             </div>
           ))}
           {trades.length === 0 && <div style={{ textAlign: 'center', padding: '60px', color: '#333', fontSize: '1.5rem' }}>WAITING FOR FIRST TRADE...</div>}
