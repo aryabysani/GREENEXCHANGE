@@ -118,6 +118,8 @@ export default function AdminPage() {
         status: (r.status ?? 'pending') as 'pending' | 'approved',
         is_submitted: !!r.is_submitted,
         is_verified: !!r.is_verified,
+        is_custom: !!r.is_custom,
+        updated_at: r.updated_at ?? ''
       })))
     }
     setEmissionsLoading(false)
@@ -367,7 +369,11 @@ export default function AdminPage() {
     return res.json()
   }
 
-  const loadData = async (type: 'profiles' | 'listings' | 'transactions') => {
+  const loadData = async (type: 'profiles' | 'listings' | 'transactions' | 'emissions') => {
+    if (type === 'emissions') {
+      await loadEmissions()
+      return
+    }
     setDataLoading(true)
     setMsg('')
     const { data } = await call(`get-${type}`)
@@ -982,7 +988,7 @@ export default function AdminPage() {
                               </tr>
                             </thead>
                             <tbody>
-                              {sRows.map((row) => (
+                              {sRows.map((row: EmissionRecord) => (
                                 <tr key={row.id} style={{ borderTop: '1px solid #E8F5E9', background: row.is_verified ? '#F1FFF4' : 'transparent' }}>
                                   <td style={{ padding: '10px 20px' }}>
                                     {emEditId === row.id ? (

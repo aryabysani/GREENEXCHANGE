@@ -18,6 +18,7 @@ type EmissionRow = {
   status: 'pending' | 'approved'
   is_submitted: boolean
   is_custom: boolean
+  is_verified: boolean
   isDirty: boolean
 }
 
@@ -97,15 +98,19 @@ export default function EmissionsPage() {
   }, [stallNo, fetchEmissions])
 
   /* ── Field updates ───────────────────────────────────────── */
-  const updateField = (index: number, field: 'product' | 'emission_per_unit' | 'quantity', val: any) => {
+  const updateField = (index: number, field: 'product' | 'emission_per_unit' | 'quantity', val: string | number) => {
     setRows((prev) => {
       const copy = [...prev]
       const r = { ...copy[index] }
-      let newVal = val
-      if (field === 'quantity' || field === 'emission_per_unit') {
-        newVal = Number(val) || 0
+      
+      if (field === 'product') {
+        r.product = val as string
+      } else if (field === 'quantity') {
+        r.quantity = Number(val) || 0
+      } else if (field === 'emission_per_unit') {
+        r.emission_per_unit = Number(val) || 0
       }
-      r[field] = newVal
+
       r.isDirty = true
       r.total_emission = r.quantity * r.emission_per_unit
       copy[index] = r
@@ -127,6 +132,7 @@ export default function EmissionsPage() {
         status: 'pending',
         is_submitted: false,
         is_custom: true,
+        is_verified: false,
         isDirty: true,
       }
     ])
