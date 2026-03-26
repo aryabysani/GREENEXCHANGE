@@ -8,6 +8,7 @@ export async function middleware(request: NextRequest) {
     path.startsWith('/how-it-works') ||
     path.startsWith('/listing/') ||
     path.startsWith('/admin') ||
+    path.startsWith('/display') ||
     path.startsWith('/auth') ||
     path.startsWith('/banned') ||
     path.startsWith('/api') ||
