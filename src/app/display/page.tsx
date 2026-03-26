@@ -72,8 +72,10 @@ export default function DisplayPage() {
 
     let nameMap: Record<string, string> = {}
     if (allIds.length > 0) {
-      const { data: profs } = await supabase.from('profiles').select('id, stall_name').in('id', allIds)
-      for (const p of profs ?? []) nameMap[p.id] = p.stall_name
+      const { data: profs } = await supabase.from('profiles').select('id, stall_name, team_username').in('id', allIds)
+      for (const p of profs ?? []) {
+        nameMap[p.id] = p.team_username || p.stall_name || '—'
+      }
     }
 
     setSellOrders((listings ?? []).map((l: any) => ({
