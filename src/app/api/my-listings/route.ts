@@ -2,20 +2,25 @@ import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import {
+  getServerSupabaseUrl,
+  getSupabaseAnonKey,
+  getSupabaseServiceRoleKey,
+} from '@/lib/supabase/env'
 
 export const dynamic = 'force-dynamic'
 
 const admin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  getServerSupabaseUrl(),
+  getSupabaseServiceRoleKey(),
   { global: { fetch: (url, opts) => fetch(url, { ...opts, cache: 'no-store' }) } }
 )
 
 export async function GET() {
   const cookieStore = await cookies()
   const userClient = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    getServerSupabaseUrl(),
+    getSupabaseAnonKey(),
     { cookies: { getAll: () => cookieStore.getAll() } }
   )
   const { data: { user } } = await userClient.auth.getUser()

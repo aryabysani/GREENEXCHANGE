@@ -22,7 +22,7 @@ export async function GET() {
   if (!listings || listings.length === 0) return NextResponse.json([])
 
   // Fetch seller names separately
-  const sellerIds = Array.from(new Set(listings.map((l: { seller_id: string }) => l.seller_id)))
+  const sellerIds = [...new Set(listings.map((l: { seller_id: string }) => l.seller_id))]
   const { data: profiles } = await admin
     .from('profiles')
     .select('id, team_username')

@@ -2,10 +2,15 @@ import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import {
+  getServerSupabaseUrl,
+  getSupabaseAnonKey,
+  getSupabaseServiceRoleKey,
+} from '@/lib/supabase/env'
 
 const admin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  getServerSupabaseUrl(),
+  getSupabaseServiceRoleKey()
 )
 
 async function matchSellOrder(listingId: string, sellerId: string, totalQty: number, askPrice: number) {
@@ -62,8 +67,8 @@ async function matchSellOrder(listingId: string, sellerId: string, totalQty: num
 export async function POST(request: Request) {
   const cookieStore = await cookies()
   const userClient = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    getServerSupabaseUrl(),
+    getSupabaseAnonKey(),
     { cookies: { getAll: () => cookieStore.getAll() } }
   )
   const { data: { user } } = await userClient.auth.getUser()
