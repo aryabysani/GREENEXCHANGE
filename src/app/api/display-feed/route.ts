@@ -51,16 +51,16 @@ export async function GET() {
       sellOrders: (listings ?? []).map((l: any) => ({
         ...l,
         stall_name: nameMap[l.seller_id] ?? '—'
-      })).slice(0, 10),
+      })).slice(0, 50),
       buyOrders: (bids ?? []).map((b: any) => ({
         ...b,
         stall_name: nameMap[b.buyer_id] ?? '—'
-      })).slice(0, 10),
+      })).slice(0, 50),
       trades: (txs ?? []).map((t: any) => ({
         ...t,
         buyer_name: nameMap[t.buyer_id] ?? '—',
         seller_name: nameMap[t.seller_id] ?? '—'
-      }))
+      })).slice(0, 50)
     }
 
     return NextResponse.json(payload)
