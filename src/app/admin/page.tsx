@@ -327,6 +327,19 @@ export default function AdminPage() {
     setEmActionLoading(null)
   }
 
+  const resetTrading = async () => {
+    if (!confirm('🚨 CRITICAL WARNING: THIS WILL DELETE ALL BUY ORDERS, SELL LISTINGS, AND TRANSACTION HISTORY. This cannot be undone. Are you absolutely sure?')) return
+    setActionLoading('reset-trading')
+    const { success, error } = await call('reset-trading')
+    if (success) {
+      setMsg('✅ Trading records wiped.')
+      if (tab === 'listings' || tab === 'transactions') loadData(tab)
+    } else {
+      setMsg('❌ Reset failed: ' + error)
+    }
+    setActionLoading(null)
+  }
+
   const handleLogin = (e: FormEvent) => {
     e.preventDefault()
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
@@ -879,8 +892,19 @@ export default function AdminPage() {
                 >
                   {emActionLoading === 'reset-all' ? 'Wiping Data...' : '🗑 Reset All Data'}
                 </button>
+                <button
+                  onClick={resetTrading}
+                  disabled={actionLoading === 'reset-trading'}
+                  style={{
+                    background: '#C53030', color: '#fff', border: 'none', borderRadius: 10,
+                    padding: '12px', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem',
+                    transition: 'all 0.2s', opacity: actionLoading === 'reset-trading' ? 0.7 : 1
+                  }}
+                >
+                  {actionLoading === 'reset-trading' ? 'Wiping Market...' : '🚨 Reset Trading Records'}
+                </button>
                 <div style={{ fontSize: '0.75rem', color: '#E53E3E', textAlign: 'center' }}>
-                  This will permanently delete all records from the emissions table.
+                  Wipes ALL sell listings, buy orders, and trade history. Irreversible.
                 </div>
               </div>
             </div>

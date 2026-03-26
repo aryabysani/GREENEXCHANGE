@@ -325,5 +325,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ data: enriched })
   }
 
+  // ── reset-trading ─────────────────────────────────────────────
+  if (action === 'reset-trading') {
+    // 1. Delete all transactions
+    await supabase.from('transactions').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    // 2. Delete all buy orders
+    await supabase.from('buy_orders').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    // 3. Delete all listings
+    await supabase.from('listings').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+
+    return NextResponse.json({ success: true })
+  }
+
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
 }
