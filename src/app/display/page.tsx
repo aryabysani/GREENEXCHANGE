@@ -42,68 +42,27 @@ export default function DisplayPage() {
 
   // Data fetching
   const fetchData = async () => {
-    // 1. Fetch Listings (Sells)
-    const { data: listings } = await supabase
-      .from('listings')
-      .select('id, credits_amount, filled_quantity, price_per_credit, seller_id')
-      .eq('status', 'live')
-      .order('price_per_credit', { ascending: true }) // Best price at top
-    
-    // 2. Fetch Buy Orders (Bids)
-    const { data: bids } = await supabase
-      .from('buy_orders')
-      .select('id, quantity, filled_quantity, price_per_credit, buyer_id')
-      .in('status', ['open', 'partial'])
-      .order('price_per_credit', { ascending: false }) // Best price at top
+    try {
+      const resp = await fetch(`/api/display-feed?t=${Date.now()}`, { cache: 'no-store' })
+      const data = await resp.json()
+      
+      if (data.error) throw new Error(data.error)
 
-    // 3. Fetch Recent Trades
-    const { data: txs } = await supabase
-      .from('transactions')
-      .select('id, credits_amount, price_per_credit, total_price, created_at, seller_id, buyer_id')
-      .order('created_at', { ascending: false })
-      .limit(10)
+      setSellOrders(data.sellOrders || [])
+      setBuyOrders(data.buyOrders || [])
+      setTrades(data.trades || [])
 
-    // 4. Batch fetch profiles for all unique IDs
-    const allIds = Array.from(new Set([
-      ...(listings ?? []).map(l => l.seller_id),
-      ...(bids ?? []).map(b => b.buyer_id),
-      ...(txs ?? []).flatMap(t => [t.seller_id, t.buyer_id])
-    ].filter(Boolean)))
-
-    let nameMap: Record<string, string> = {}
-    if (allIds.length > 0) {
-      const { data: profs } = await supabase.from('profiles').select('id, stall_name, team_username').in('id', allIds)
-      for (const p of profs ?? []) {
-        nameMap[p.id] = p.team_username || p.stall_name || '—'
+      // Check for new trades to highlight
+      if (data.trades && data.trades.length > 0) {
+        const latest = data.trades[0].id
+        if (lastTradeId && latest !== lastTradeId) {
+          setHighlightTradeId(latest)
+          setTimeout(() => setHighlightTradeId(null), 3000)
+        }
+        setLastTradeId(latest)
       }
-    }
-
-    setSellOrders((listings ?? []).map((l: any) => ({
-      ...l,
-      stall_name: nameMap[l.seller_id] ?? '—'
-    })))
-    
-    setBuyOrders((bids ?? []).map((b: any) => ({
-      ...b,
-      stall_name: nameMap[b.buyer_id] ?? '—'
-    })))
-
-    setTrades((txs ?? []).map((t: any) => ({
-      ...t,
-      seller_name: nameMap[t.seller_id] ?? '—',
-      buyer_name: nameMap[t.buyer_id] ?? '—'
-    })))
-
-    // Check for new trades to highlight
-    if (txs && txs.length > 0) {
-      const latest = txs[0].id
-      if (lastTradeId && latest !== lastTradeId) {
-        setHighlightTradeId(latest)
-        // Play sound if possible (browsers block auto-audio, but we can try)
-        // const audio = new Audio('/bing.mp3'); audio.play().catch(() => {});
-        setTimeout(() => setHighlightTradeId(null), 3000)
-      }
-      setLastTradeId(latest)
+    } catch (err) {
+      console.error('Display fetch error:', err)
     }
   }
 
